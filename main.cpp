@@ -8,242 +8,25 @@
 #include <random>
 #include <algorithm>
 #include <iostream>
+#include "texture.h"
+#include "block.h"
+#include "common.h"
 
 
-//Screen dimension constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-const int MATRIX_WIDTH = 17;
-
-const int MATRIX_LEFT_BORDER = 2;
-
-const int MATRIX_HEIGHT = 12;
-const int MATRIX_BOT_BORDER = 1;
-
-const int GAME_FIRST_COLUMN = 8;
-
-const int HIGHLIGHT_BORDER_WIDTH = 3;
-
-const int TEXTURE_SIDE = 32;
-
-int matrixToPosCoordsJX(int j) {
-	return TEXTURE_SIDE * (MATRIX_LEFT_BORDER + j);
-}
-int matrixToPosCoordsIY(int i) {
-	return SCREEN_HEIGHT - (MATRIX_BOT_BORDER + 1 + i) * TEXTURE_SIDE;
-}
+//Starts up SDL and creates window
+bool init();
+//Loads media
+bool loadMedia();
+//Frees media and shuts down SDL
+void close();
+void handleBlockClick(LBlock* block);
+void render();
 
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
 
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
-
-void drawBackground() {
-	SDL_SetRenderDrawColor(gRenderer, 244, 173, 66, 0xFF);
-	SDL_RenderClear(gRenderer);
-}
-
-//Texture wrapper class
-class LTexture
-{
-public:
-	//Initializes variables
-	LTexture();
-
-	//Deallocates memory
-	~LTexture();
-
-	//Loads image at specified path
-	bool loadFromFile(std::string path);
-
-	//Deallocates texture
-	void free();
-
-	//Set color modulation
-	void setColor(Uint8 red, Uint8 green, Uint8 blue);
-
-	//Set blending
-	void setBlendMode(SDL_BlendMode blending);
-
-	//Set alpha modulation
-	void setAlpha(Uint8 alpha);
-
-	//Renders texture at given point
-	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
-
-	//Gets image dimensions
-	int getWidth();
-	int getHeight();
-
-private:
-	//The actual hardware texture
-	SDL_Texture* mTexture;
-
-	//Image dimensions
-	int mWidth;
-	int mHeight;
-};
-
-LTexture::LTexture()
-{
-	//Initialize
-	mTexture = NULL;
-	mWidth = 0;
-	mHeight = 0;
-}
-
-LTexture::~LTexture()
-{
-	//Deallocate
-	free();
-}
-
-bool LTexture::loadFromFile(std::string path)
-{
-	//Get rid of preexisting texture
-	free();
-
-	//The final texture
-	SDL_Texture* newTexture = NULL;
-
-	//Load image at specified path
-	SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-	if (loadedSurface == NULL)
-	{
-		printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-	}
-	else
-	{
-		//Color key image
-		SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
-
-		//Create texture from surface pixels
-		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-		if (newTexture == NULL)
-		{
-			printf("Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
-		}
-		else
-		{
-			//Get image dimensions
-			mWidth = loadedSurface->w;
-			mHeight = loadedSurface->h;
-		}
-
-		//Get rid of old loaded surface
-		SDL_FreeSurface(loadedSurface);
-	}
-
-	//Return success
-	mTexture = newTexture;
-	return mTexture != NULL;
-}
-
-void LTexture::free()
-{
-	//Free texture if it exists
-	if (mTexture != NULL)
-	{
-		SDL_DestroyTexture(mTexture);
-		mTexture = NULL;
-		mWidth = 0;
-		mHeight = 0;
-	}
-}
-
-void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue)
-{
-	//Modulate texture rgb
-	SDL_SetTextureColorMod(mTexture, red, green, blue);
-}
-
-void LTexture::setBlendMode(SDL_BlendMode blending)
-{
-	//Set blending function
-	SDL_SetTextureBlendMode(mTexture, blending);
-}
-
-void LTexture::setAlpha(Uint8 alpha)
-{
-	//Modulate texture alpha
-	SDL_SetTextureAlphaMod(mTexture, alpha);
-}
-
-void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
-{
-	//Set rendering space and render to screen
-	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-
-	//Set clip rendering dimensions
-	if (clip != NULL)
-	{
-		renderQuad.w = clip->w;
-		renderQuad.h = clip->h;
-	}
-
-	//Render to screen
-	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
-}
-
-int LTexture::getWidth()
-{
-	return mWidth;
-}
-
-int LTexture::getHeight()
-{
-	return mHeight;
-}
-
-
-class LBlock
-{
-public:
-	LBlock();
-
-	void setRenderPosition(int x, int y);
-	void setMatrixPosition(int j, int i);
-	void setDegrees(int a);
-	void setTexture(LTexture* tex);
-	LTexture* getTexture();
-
-	void handleEvent(SDL_Event* e);
-
-	void render();
-
-	
-
-	// Position in the screen
-	SDL_Point pos;
-	SDL_Point matrixPos;
-	int degrees;
-
-	bool searched; // true when doing depth first search
-
-	bool falling;
-private:
-
-	LTexture* mTex;
-	bool highlight = false;
-	bool beingClicked = false;
-	bool removed = false;
-
-
-};
-
-//Starts up SDL and creates window
-bool init();
-
-//Loads media
-bool loadMedia();
-
-//Frees media and shuts down SDL
-void close();
-
-void handleBlockClick(LBlock* block);
-
 
 //Scene texture
 LTexture gRedSquare;
@@ -252,77 +35,73 @@ LTexture gGreenSquare;
 LTexture gBlueSquare;
 LTexture gYellowSquare;
 
+// All the textures
 std::vector<LTexture*> textures;
 
-bool piecesAreFalling = false;
+/* Time of the start of the timer for the insertion of new columns*/
+int blockTimer;
 
-//Buttons
+// Matrix of game blocks
+// it has an extra column to be used to insert the right column
+LBlock* matrix[MATRIX_WIDTH + 1][MATRIX_HEIGHT];
 
-LBlock* matrix[MATRIX_WIDTH][MATRIX_HEIGHT];
-
+// All the blocks of the game
 std::vector<LBlock*> blocks;
+
+// All the blocks that have been matched and are to be removed from blocks and matrix
 std::vector<LBlock*> removedBlocks;
 
-LBlock::LBlock() {
+
+bool piecesAreFalling = false;
+bool insertingColumn = false;
+
+/* Convert a matrix coordinate to a screen pixel XY coordinate*/
+int matrixToPosCoordsJX(int j) {
+	return TEXTURE_SIDE * (MATRIX_LEFT_BORDER + j);
 }
 
-void LBlock::setRenderPosition(int x, int y) {
-	pos.x = x;
-	pos.y = y;
+/* Convert a matrix coordinate to a screen pixel XY coordinate*/
+int matrixToPosCoordsIY(int i) {
+	return SCREEN_HEIGHT - (MATRIX_BOT_BORDER + 1 + i) * TEXTURE_SIDE;
 }
 
-void LBlock::setMatrixPosition(int j, int i) {
-	matrixPos.x = j;
-	matrixPos.y = i;
+/* Render the background composed of other images*/
+void drawBackground() {
+	SDL_SetRenderDrawColor(gRenderer, 244, 173, 66, 0xFF);
+	SDL_RenderClear(gRenderer);
 }
 
-void LBlock::setTexture(LTexture* tex) {
-	mTex = tex;
+/* Generates a random texture from the available ones*/
+LTexture* randomTexture() {
+	// http://stackoverflow.com/questions/5008804/generating-random-integer-from-a-range
+	std::random_device rd;
+	std::mt19937 rng(rd());
+	std::uniform_int_distribution<int> uni(0, textures.size() - 1);
+	int randomTexture = uni(rng);
+	return textures[randomTexture];
 }
 
-LTexture* LBlock::getTexture() {
-	return mTex;
+/* Add a block to the matrix and list of blocks with a given texture at coordinage (j,i) */
+void addBlock(LTexture* tex, int j, int i) {
+	LBlock* blk = new LBlock();
+	blk->setTexture(tex);
+	blk->setMatrixPosition(j, i);
+	blk->setRenderPosition(matrixToPosCoordsJX(j), matrixToPosCoordsIY(i));
+	matrix[j][i] = blk;
+	blocks.push_back(blk);
 }
 
-void LBlock::handleEvent(SDL_Event* e) {
-	if (removed)
-		return;
+void searchMathingBlocks(LBlock* block);
 
-	if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
-	{
-		//Get mouse position
-		int x, y;
-		SDL_GetMouseState(&x, &y);
-
-		//Check if mouse is inside block picture
-		bool inside = true;
-
-		if (x < pos.x) {
-			inside = false;
-		}
-		else if (x > pos.x + mTex->getWidth()-1) { // avoid overlap
-			inside = false;
-		}
-		else if (y < pos.y) {
-			inside = false;
-		}
-		else if (y > pos.y + mTex->getHeight()-1) { // avoid overlap
-			inside = false;
-		}
-
-		if (inside) {
-			if (e->type == SDL_MOUSEBUTTONDOWN) {
-				beingClicked = true;
-			}else if (beingClicked && e->type == SDL_MOUSEBUTTONUP) {
-				//removed = beingClicked && twoOrMoreEqual(mTex);
-				handleBlockClick(this);
-				beingClicked = false;
-			}			
-		}
-		highlight = inside;
-	}
+void handleBlockClick(LBlock* block) {
+	// clean blocks search flag
+	for (auto b : blocks)
+		b->searched = false;
+	searchMathingBlocks(block);	
 }
 
+
+/* Mark all the blocks that will be falling due to blocks being removed */
 void markFalling(LBlock* block) {
 	for (int i = block->matrixPos.y; i < MATRIX_HEIGHT; i++) {
 		LBlock* el = matrix[block->matrixPos.x][i];
@@ -332,22 +111,26 @@ void markFalling(LBlock* block) {
 	}	
 }
 
+/* Adds to the removed blocks all blocks that match texture*/
 void sweep(LBlock* block, LBlock* other) {
 	if (other != NULL && block->getTexture() == other->getTexture()) {
-		if (removedBlocks.size() == 0 || // size zero means the search just started
-			removedBlocks.back() != block) // to avoid duplicates
+		// add to the removed blocks if not contained
+		if (std::find(removedBlocks.begin(), removedBlocks.end(), block) == removedBlocks.end()) 
 			removedBlocks.push_back(block);
 		markFalling(block);
-		removedBlocks.push_back(other);
+		// add to the removed blocks if not contained
+		if (std::find(removedBlocks.begin(), removedBlocks.end(), other) == removedBlocks.end())
+			removedBlocks.push_back(other);
 		markFalling(other);
-		handleBlockClick(other);
+		searchMathingBlocks(other);
+		//
 		piecesAreFalling = true;
 	}
 }
 
-
-void handleBlockClick(LBlock* block) {
-	if (block->searched)
+/* Detect all blocks connected to the first initial block that are of the same color */
+void searchMathingBlocks(LBlock* block) {
+	if (block->searched) // avoid infinite loops
 		return;
 	block->searched = true;
 	// handle the top block
@@ -355,45 +138,24 @@ void handleBlockClick(LBlock* block) {
 		LBlock* top = matrix[block->matrixPos.x][block->matrixPos.y + 1];
 		sweep(block, top);		
 	}
+	// handle the bottom block
 	if (block->matrixPos.y > 0) {
 		LBlock* bot = matrix[block->matrixPos.x][block->matrixPos.y - 1];
 		sweep(block, bot);
 	}
+	// handle right block
 	if (block->matrixPos.x < MATRIX_WIDTH - 1) {
 		LBlock* right = matrix[block->matrixPos.x+1][block->matrixPos.y];
 		sweep(block, right);
 	}
+	// handle left block
 	if (block->matrixPos.x > 0) {
 		LBlock* left = matrix[block->matrixPos.x-1][block->matrixPos.y];
 		sweep(block, left);
 	}
 }
 
-void LBlock::setDegrees(int a) {
-	degrees = a;
-}
 
-void LBlock::render() {
-	if (removed)
-		return;
-	mTex->render(pos.x, pos.y, NULL, degrees);	
-	// render hightlight
-	if (highlight) {
-		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-		// Left side rectangle
-		SDL_Rect fillRect = { pos.x, pos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
-		SDL_RenderFillRect(gRenderer, &fillRect);
-		// Right side rectangle
-		fillRect = { pos.x + mTex->getWidth() - HIGHLIGHT_BORDER_WIDTH , pos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
-		SDL_RenderFillRect(gRenderer, &fillRect);
-		// Top side rectangle
-		fillRect = { pos.x, pos.y, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
-		SDL_RenderFillRect(gRenderer, &fillRect);
-		// Bottom side rectangle
-		fillRect = { pos.x, pos.y + mTex->getHeight() - HIGHLIGHT_BORDER_WIDTH, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
-		SDL_RenderFillRect(gRenderer, &fillRect);
-	}
-}
 
 bool init()
 {
@@ -453,33 +215,34 @@ bool loadMedia()
 {
 	//Loading success flag
 	bool success = true;
+	std::string basePath = "../resources/";
 
 	//Load squares
-	if (!gRedSquare.loadFromFile("resources/red.square.bmp"))
+	if (!gRedSquare.loadFromFile(basePath + "red.square.bmp"))
 	{
 		printf("Failed to load red square texture!\n");
 		success = false;
 	}
 	textures.push_back(&gRedSquare);
-	if (!gGreySquare.loadFromFile("resources/grey.square.bmp"))
+	if (!gGreySquare.loadFromFile(basePath + "grey.square.bmp"))
 	{
 		printf("Failed to load grey square texture!\n");
 		success = false;
 	}
 	textures.push_back(&gGreySquare);
-	if (!gGreenSquare.loadFromFile("resources/green.square.bmp"))
+	if (!gGreenSquare.loadFromFile(basePath + "green.square.bmp"))
 	{
 		printf("Failed to load green square texture!\n");
 		success = false;
 	}
 	textures.push_back(&gGreenSquare);
-	if (!gBlueSquare.loadFromFile("resources/blue.square.bmp"))
+	if (!gBlueSquare.loadFromFile(basePath + "blue.square.bmp"))
 	{
 		printf("Failed to load blue square texture!\n");
 		success = false;
 	}
 	textures.push_back(&gBlueSquare);
-	if (!gYellowSquare.loadFromFile("resources/yellow.square.bmp"))
+	if (!gYellowSquare.loadFromFile(basePath + "yellow.square.bmp"))
 	{
 		printf("Failed to load yellow square texture!\n");
 		success = false;
@@ -493,6 +256,12 @@ void close()
 	//Free loaded textures
 	for (LTexture* tex : textures)
 		tex->free();
+	textures.clear();
+
+	for (LBlock* blk : blocks) 
+		free(blk);
+	
+	blocks.clear();
 
 	//Destroy window	
 	SDL_DestroyRenderer(gRenderer);
@@ -545,7 +314,7 @@ bool processFalling() {
 
 		for (LBlock* it : blocks) {
 			if (it->falling) {		
-				it->pos.y = it->pos.y + 10*dt + 5*dt*dt;	
+				it->pos.y = it->pos.y + (int)(10*dt + 5*dt*dt);	
 				int yTarget = matrixToPosCoordsIY(it->matrixPos.y);
 				if (it->pos.y >= yTarget) {
 					it->falling = false;
@@ -554,16 +323,7 @@ bool processFalling() {
 				}
 			}
 		}
-
-		//Background color
-		drawBackground();
-
-		//Render blocks
-		for (LBlock* it : blocks) {
-			it->render();
-		}
-		//Update screen
-		SDL_RenderPresent(gRenderer);
+		render();
 
 	}
 	int blocksSliding = 0;
@@ -601,7 +361,7 @@ bool processFalling() {
 
 		for (LBlock* it : blocks) {
 			if (it->falling) {
-				it->pos.x = it->pos.x + 10 * dt + 5 * dt*dt;
+				it->pos.x = it->pos.x + (int)(10 * dt + 5 * dt*dt);
 				int xTarget = matrixToPosCoordsJX(it->matrixPos.x);
 				if (it->pos.x >= xTarget) {
 					it->falling = false;
@@ -611,28 +371,80 @@ bool processFalling() {
 			}
 		}
 
-		//Background color
-		drawBackground();
-
-		//Render blocks
-		for (LBlock* it : blocks) {
-			it->render();
-		}
-		//Update screen
-		SDL_RenderPresent(gRenderer);
+		render();
 	}
 
 	return quit;
 }
 
-void addBlock(LTexture* tex, int j, int i) {
-	LBlock* blk = new LBlock();
-	blk->setTexture(tex);
-	blk->setMatrixPosition(j, i);
-	blk->setRenderPosition(matrixToPosCoordsJX(j), matrixToPosCoordsIY(i));
-	matrix[j][i] = blk;
-	blocks.push_back(blk);
+
+
+void gameOver() {
+
 }
+
+bool processColumnInsertion() {
+	SDL_Event e;
+
+	bool quit = false;
+	// create random column
+	int j = MATRIX_WIDTH; //last column
+	for (int i = 0; i < MATRIX_HEIGHT; i++) {
+		// plane column just outside the screen to the right
+		addBlock(randomTexture(), j, i);
+	}		
+	
+	if (matrix[0][0] != NULL) { //if the first column is not NULL then the game is over
+		gameOver();
+		quit = true;
+		return quit;
+	}
+	// make column slide to the left until next to the last column
+	for (int j = 1; j < MATRIX_WIDTH + 1; j++) {
+		for (int i = 0; i < MATRIX_HEIGHT; i++) {
+			LBlock* blk = matrix[j][i];
+			if (blk == NULL)
+				continue;
+			matrix[j - 1][i] = matrix[j][i];
+			matrix[j][i]->matrixPos.x--;
+			matrix[j][i] = NULL;
+		}
+	}
+	int startTime = SDL_GetTicks();
+	bool finished = false;
+
+	while (!finished && !quit) {
+		while (SDL_PollEvent(&e) != 0)
+		{
+			//User requests quit
+			if (e.type == SDL_QUIT)
+			{
+				quit = true;
+				return quit;
+			}
+		}
+
+		// make all blocks slide one block to the left and adjust the render and matrix positions
+		double dt = (SDL_GetTicks() - startTime) / 1000.0;
+		
+		for (LBlock* it : blocks) {			
+			it->pos.x = it->pos.x - (int)(5 * dt + 5 * dt*dt);
+		
+			int xTarget = matrixToPosCoordsJX(it->matrixPos.x);
+			if (it->pos.x <= xTarget) {
+				finished = true; // when one block is aligned then all other are too
+				it->pos.x = xTarget;
+			}
+		}
+
+		render();
+
+	}
+
+	return quit;
+}
+
+/* Used for tests */
 void generateWorld2() {
 	int j = GAME_FIRST_COLUMN;
 
@@ -643,17 +455,103 @@ void generateWorld2() {
 	for (; j < MATRIX_WIDTH; j++)
 		addBlock(&gBlueSquare, j, 0);
 }
-void generateWorld() {	
-	// http://stackoverflow.com/questions/5008804/generating-random-integer-from-a-range
-	std::random_device rd;
-	std::mt19937 rng(rd());
-	std::uniform_int_distribution<int> uni(0, textures.size() - 1);
 
+
+void generateWorld() {	
 	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++) {
 		for (int i = 0; i < MATRIX_HEIGHT; i++) {
-			int randomTexture = uni(rng);
-			addBlock(textures[randomTexture], j, i);
+			addBlock(randomTexture(), j, i);
 		}
+	}
+}
+
+void initWorld() {
+	for (int i = 0; i < MATRIX_HEIGHT; i++)
+		for (int j = 0; j < MATRIX_WIDTH+1; j++)
+			matrix[i][j] = NULL;
+
+	blockTimer = SDL_GetTicks();
+}
+
+
+
+
+void render() {
+	drawBackground();
+
+	// render remaining time bar
+	if (!insertingColumn) {
+		double w = (SDL_GetTicks() - blockTimer) / (double)TIMER_CLICKS;
+		if (w >= 1.0) {
+			blockTimer = SDL_GetTicks();
+			insertingColumn = true;
+			w = 1.0;
+		}
+		SDL_Rect rect = { TIMER_POS_X, TIMER_POS_Y, (int)(w * TIMER_WIDTH), TIMER_HEIGHT };
+		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x22, 0x00, 0xFF);
+		SDL_RenderFillRect(gRenderer, &rect);
+	}
+
+	//Render blocks
+	for (LBlock* it : blocks) {
+		it->render();
+	}
+
+	//Update screen
+	SDL_RenderPresent(gRenderer);
+}
+
+/* Game loop  */
+void gameLoop() {
+	initWorld();
+	generateWorld();
+
+	//Main loop flag
+	bool quit = false;
+
+	//Event handler
+	SDL_Event e;
+
+	//While application is running
+	while (!quit)
+	{
+		//Handle events on queue
+		while (SDL_PollEvent(&e) != 0)
+		{
+			//User requests quit
+			if (e.type == SDL_QUIT)
+			{
+				quit = true;
+			}
+
+			// handle mouse highlight and clicks on each block
+			for (LBlock* it : blocks) {				
+				it->handleEvent(&e);
+			}
+		}
+
+		// remove matched blocks from the vector of blocks
+		for (LBlock* it : removedBlocks) {
+			matrix[it->matrixPos.x][it->matrixPos.y] = NULL;
+			blocks.erase(std::remove(blocks.begin(), blocks.end(), it), blocks.end());
+		}
+		// TODO ..
+		removedBlocks.clear();
+		
+		render();		
+
+		if (piecesAreFalling) {
+			quit = processFalling();
+			piecesAreFalling = false;
+		}
+
+		if (insertingColumn) {
+			quit = processColumnInsertion();
+			insertingColumn = false;
+		}
+
+
+
 	}
 }
 
@@ -674,59 +572,7 @@ int main(int argc, char* args[])
 		}
 		else
 		{
-			for (int i = 0; i < MATRIX_HEIGHT; i++)
-				for (int j = 0; j < MATRIX_WIDTH; j++)
-					matrix[i][j] = NULL;
-
-			generateWorld();
-
-			//Main loop flag
-			bool quit = false;
-
-			//Event handler
-			SDL_Event e;
-
-			//While application is running
-			while (!quit)
-			{			
-				//Handle events on queue
-				while (SDL_PollEvent(&e) != 0)
-				{
-					//User requests quit
-					if (e.type == SDL_QUIT)
-					{
-						quit = true;
-					}					
-					for (LBlock* it : blocks) {
-						
-						for (auto b : blocks)
-							b->searched = false;
-
-						it->handleEvent(&e);
-					}
-				}
-				// handle removed blocks
-				for (LBlock* it : removedBlocks) {
-					matrix[it->matrixPos.x][it->matrixPos.y] = NULL;
-					blocks.erase(std::remove(blocks.begin(), blocks.end(), it), blocks.end());
-				}
-				removedBlocks.clear();
-
-				drawBackground();
-
-				//Render blocks
-				for (LBlock* it : blocks) {
-					it->render();
-				}
-				//Update screen
-				SDL_RenderPresent(gRenderer);
-
-				if (piecesAreFalling) {
-					quit = processFalling();
-					piecesAreFalling = false;
-				}
-				
-			}
+			gameLoop();
 		}
 	}
 
