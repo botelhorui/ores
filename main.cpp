@@ -39,7 +39,7 @@ LTexture gYellowSquare;
 std::vector<LTexture*> textures;
 
 /* Time of the start of the timer for the insertion of new columns*/
-int blockTimer;
+int insertTimer;
 
 // Matrix of game blocks
 // it has an extra column to be used to insert the right column
@@ -56,12 +56,12 @@ bool piecesAreFalling = false;
 bool insertingColumn = false;
 
 /* Convert a matrix coordinate to a screen pixel XY coordinate*/
-int matrixToPosCoordsJX(int j) {
+int matrixToPixelHorizontal(int j) {
 	return TEXTURE_SIDE * (MATRIX_LEFT_BORDER + j);
 }
 
 /* Convert a matrix coordinate to a screen pixel XY coordinate*/
-int matrixToPosCoordsIY(int i) {
+int matrixToPixelVertical(int i) {
 	return SCREEN_HEIGHT - (MATRIX_BOT_BORDER + 1 + i) * TEXTURE_SIDE;
 }
 
@@ -86,7 +86,7 @@ void addBlock(LTexture* tex, int j, int i) {
 	LBlock* blk = new LBlock();
 	blk->setTexture(tex);
 	blk->setMatrixPosition(j, i);
-	blk->setRenderPosition(matrixToPosCoordsJX(j), matrixToPosCoordsIY(i));
+	blk->setRenderPosition(matrixToPixelHorizontal(j), matrixToPixelVertical(i));
 	matrix[j][i] = blk;
 	blocks.push_back(blk);
 }
@@ -97,7 +97,7 @@ void handleBlockClick(LBlock* block) {
 	// clean blocks search flag
 	for (auto b : blocks)
 		b->searched = false;
-	searchMathingBlocks(block);	
+	searchMathingBlocks(block);		
 }
 
 
@@ -274,10 +274,7 @@ void close()
 	SDL_Quit();
 }
 
-bool processFalling() {
-	int startTime = SDL_GetTicks();
-	SDL_Event e;
-	bool quit = false;
+bool processFalling() {	
 	int blocksFalling = 0;
 
 	// Calculate the new matrix coordinates of each faling block
@@ -289,7 +286,7 @@ bool processFalling() {
 				matrix[j][i] = NULL;
 				matrix[j][lowest] = block;
 				block->setMatrixPosition(j, lowest);				
-				//block->setRenderPosition(matrixToPosCoordsJX(j), matrixToPosCoordsIY(lowest));	
+				
 				if (lowest != i) {
 					blocksFalling++;
 				}
@@ -298,6 +295,9 @@ bool processFalling() {
 		}
 	}
 	
+	int startTime = SDL_GetTicks();
+	SDL_Event e;
+	bool quit = false;
 
 	while (blocksFalling > 0 && !quit ) {
 		while (SDL_PollEvent(&e) != 0)
@@ -314,12 +314,12 @@ bool processFalling() {
 
 		for (LBlock* it : blocks) {
 			if (it->falling) {		
-				it->pos.y = it->pos.y + (int)(10*dt + 5*dt*dt);	
-				int yTarget = matrixToPosCoordsIY(it->matrixPos.y);
-				if (it->pos.y >= yTarget) {
+				it->pixelPos.y = it->pixelPos.y + (int)(10*dt + 5*dt*dt);	
+				int yTarget = matrixToPixelVertical(it->matrixPos.y);
+				if (it->pixelPos.y >= yTarget) {
 					it->falling = false;
 					blocksFalling--;
-					it->pos.y = yTarget;
+					it->pixelPos.y = yTarget;
 				}
 			}
 		}
@@ -361,12 +361,12 @@ bool processFalling() {
 
 		for (LBlock* it : blocks) {
 			if (it->falling) {
-				it->pos.x = it->pos.x + (int)(10 * dt + 5 * dt*dt);
-				int xTarget = matrixToPosCoordsJX(it->matrixPos.x);
-				if (it->pos.x >= xTarget) {
+				it->pixelPos.x = it->pixelPos.x + (int)(10 * dt + 5 * dt*dt);
+				int xTarget = matrixToPixelHorizontal(it->matrixPos.x);
+				if (it->pixelPos.x >= xTarget) {
 					it->falling = false;
 					blocksSliding--;
-					it->pos.x = xTarget;
+					it->pixelPos.x = xTarget;
 				}
 			}
 		}
@@ -428,12 +428,12 @@ bool processColumnInsertion() {
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
 		
 		for (LBlock* it : blocks) {			
-			it->pos.x = it->pos.x - (int)(5 * dt + 5 * dt*dt);
+			it->pixelPos.x = it->pixelPos.x - (int)(5 * dt + 5 * dt*dt);
 		
-			int xTarget = matrixToPosCoordsJX(it->matrixPos.x);
-			if (it->pos.x <= xTarget) {
+			int xTarget = matrixToPixelHorizontal(it->matrixPos.x);
+			if (it->pixelPos.x <= xTarget) {
 				finished = true; // when one block is aligned then all other are too
-				it->pos.x = xTarget;
+				it->pixelPos.x = xTarget;
 			}
 		}
 
@@ -470,7 +470,7 @@ void initWorld() {
 		for (int j = 0; j < MATRIX_WIDTH+1; j++)
 			matrix[i][j] = NULL;
 
-	blockTimer = SDL_GetTicks();
+	insertTimer = SDL_GetTicks();
 }
 
 
@@ -481,9 +481,9 @@ void render() {
 
 	// render remaining time bar
 	if (!insertingColumn) {
-		double w = (SDL_GetTicks() - blockTimer) / (double)TIMER_CLICKS;
+		double w = (SDL_GetTicks() - insertTimer) / (double)TIMER_CLICKS;
 		if (w >= 1.0) {
-			blockTimer = SDL_GetTicks();
+			insertTimer = SDL_GetTicks();
 			insertingColumn = true;
 			w = 1.0;
 		}

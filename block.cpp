@@ -6,8 +6,8 @@ LBlock::LBlock() {
 }
 
 void LBlock::setRenderPosition(int x, int y) {
-	pos.x = x;
-	pos.y = y;
+	pixelPos.x = x;
+	pixelPos.y = y;
 }
 
 void LBlock::setMatrixPosition(int j, int i) {
@@ -37,19 +37,19 @@ void LBlock::handleEvent(SDL_Event* e) {
 		bool mouseInsideBlock = true;
 
 		// if its to the left of the block
-		if (x < pos.x) {
+		if (x < pixelPos.x) {
 			mouseInsideBlock = false;
 		}
 		// if its to the right of the block
-		else if (x > pos.x + mTex->getWidth() - 1) { // subtract 1 to avoid overlap with the block to the right
+		else if (x > pixelPos.x + mTex->getWidth() - 1) { // subtract 1 to avoid overlap with the block to the right
 			mouseInsideBlock = false;
 		}
 		// if its above
-		else if (y < pos.y) {
+		else if (y < pixelPos.y) {
 			mouseInsideBlock = false;
 		}
 		// if its under
-		else if (y > pos.y + mTex->getHeight() - 1) { // subtract 1 to avoid overlap with the bottom block
+		else if (y > pixelPos.y + mTex->getHeight() - 1) { // subtract 1 to avoid overlap with the bottom block
 			mouseInsideBlock = false;
 		}
 
@@ -73,21 +73,21 @@ void LBlock::setDegrees(int a) {
 void LBlock::render() {
 	if (removed)
 		return;
-	mTex->render(pos.x, pos.y, NULL, degrees);
+	mTex->render(pixelPos.x, pixelPos.y, NULL, degrees);
 	// render hightlight
 	if (highlight) {
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		// Left side rectangle
-		SDL_Rect fillRect = { pos.x, pos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
+		SDL_Rect fillRect = { pixelPos.x, pixelPos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
 		SDL_RenderFillRect(gRenderer, &fillRect);
 		// Right side rectangle
-		fillRect = { pos.x + mTex->getWidth() - HIGHLIGHT_BORDER_WIDTH , pos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
+		fillRect = { pixelPos.x + mTex->getWidth() - HIGHLIGHT_BORDER_WIDTH , pixelPos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
 		SDL_RenderFillRect(gRenderer, &fillRect);
 		// Top side rectangle
-		fillRect = { pos.x, pos.y, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
+		fillRect = { pixelPos.x, pixelPos.y, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
 		SDL_RenderFillRect(gRenderer, &fillRect);
 		// Bottom side rectangle
-		fillRect = { pos.x, pos.y + mTex->getHeight() - HIGHLIGHT_BORDER_WIDTH, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
+		fillRect = { pixelPos.x, pixelPos.y + mTex->getHeight() - HIGHLIGHT_BORDER_WIDTH, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
 		SDL_RenderFillRect(gRenderer, &fillRect);
 	}
 }

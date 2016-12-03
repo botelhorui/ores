@@ -23,7 +23,7 @@ public:
 	void handleEvent(SDL_Event* e);
 	void render();
 	// Position in the screen
-	SDL_Point pos;
+	SDL_Point pixelPos;
 	SDL_Point matrixPos;
 	int degrees;
 
