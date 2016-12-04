@@ -1,5 +1,5 @@
 #pragma once
-#include "block.h"
+
 //Screen width pixeis
 const int SCREEN_WIDTH = 640;
 
@@ -38,7 +38,5 @@ const int TIMER_WIDTH = 100;
 
 
 
-extern SDL_Renderer* gRenderer;
 
-void handleBlockClick(LBlock* block);
 

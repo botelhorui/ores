@@ -1,14 +1,7 @@
 #pragma once
 
 #include <SDL.h>
-#include <SDL_image.h>
-#include <stdio.h>
 #include <string>
-#include <cmath>
-#include <vector>
-#include <random>
-#include <algorithm>
-#include <iostream>
 
 //Texture wrapper class
 class LTexture
@@ -27,20 +20,20 @@ public:
 	void free();
 
 	//Set color modulation
-	void setColor(Uint8 red, Uint8 green, Uint8 blue);
+	void setColor(Uint8 red, Uint8 green, Uint8 blue) const;
 
 	//Set blending
-	void setBlendMode(SDL_BlendMode blending);
+	void setBlendMode(SDL_BlendMode blending) const;
 
 	//Set alpha modulation
-	void setAlpha(Uint8 alpha);
+	void setAlpha(Uint8 alpha) const;
 
 	//Renders texture at given point
-	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+	void render(int x, int y, SDL_Rect* clip = nullptr, double angle = 0.0, SDL_Point* center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE) const;
 
 	//Gets image dimensions
-	int getWidth();
-	int getHeight();
+	int getWidth() const;
+	int getHeight() const;
 
 private:
 	//The actual hardware texture

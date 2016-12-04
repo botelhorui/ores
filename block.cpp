@@ -1,29 +1,33 @@
-#include "block.h"
 #include "common.h"
+#include "block.h"
 
 
-LBlock::LBlock() {
+void handleBlockClick(LBlock* block);
+
+LBlock::LBlock(): pixelPoint(0, 0), matrixPoint(0, 0)
+{
+	degrees = 0;
+	falling = false;
+	searched = false;
+	sliding = false;
+	mTex = nullptr;
+	highlight = false;
+	blockBeingClicked = false;
+	removed = false;
 }
 
-void LBlock::setRenderPosition(int x, int y) {
-	pixelPos.x = x;
-	pixelPos.y = y;
-}
-
-void LBlock::setMatrixPosition(int j, int i) {
-	matrixPos.x = j;
-	matrixPos.y = i;
-}
-
-void LBlock::setTexture(LTexture* tex) {
+void LBlock::setTexture(LTexture* tex)
+{
 	mTex = tex;
 }
 
-LTexture* LBlock::getTexture() {
+LTexture* LBlock::getTexture() const
+{
 	return mTex;
 }
 
-void LBlock::handleEvent(SDL_Event* e) {
+void LBlock::handleEvent(SDL_Event* e)
+{
 	if (removed)
 		return;
 
@@ -37,27 +41,34 @@ void LBlock::handleEvent(SDL_Event* e) {
 		bool mouseInsideBlock = true;
 
 		// if its to the left of the block
-		if (x < pixelPos.x) {
+		if (x < pixelPoint.x)
+		{
 			mouseInsideBlock = false;
 		}
 		// if its to the right of the block
-		else if (x > pixelPos.x + mTex->getWidth() - 1) { // subtract 1 to avoid overlap with the block to the right
+		else if (x > pixelPoint.x + mTex->getWidth() - 1)
+		{ // subtract 1 to avoid overlap with the block to the right
 			mouseInsideBlock = false;
 		}
 		// if its above
-		else if (y < pixelPos.y) {
+		else if (y < pixelPoint.y)
+		{
 			mouseInsideBlock = false;
 		}
 		// if its under
-		else if (y > pixelPos.y + mTex->getHeight() - 1) { // subtract 1 to avoid overlap with the bottom block
+		else if (y > pixelPoint.y + mTex->getHeight() - 1)
+		{ // subtract 1 to avoid overlap with the bottom block
 			mouseInsideBlock = false;
 		}
 
-		if (mouseInsideBlock) {
-			if (e->type == SDL_MOUSEBUTTONDOWN) {
+		if (mouseInsideBlock)
+		{
+			if (e->type == SDL_MOUSEBUTTONDOWN)
+			{
 				blockBeingClicked = true;
 			}
-			else if (blockBeingClicked && e->type == SDL_MOUSEBUTTONUP) { // if block is clicked				
+			else if (blockBeingClicked && e->type == SDL_MOUSEBUTTONUP)
+			{ // if block is clicked				
 				handleBlockClick(this);
 				blockBeingClicked = false;
 			}
@@ -66,28 +77,52 @@ void LBlock::handleEvent(SDL_Event* e) {
 	}
 }
 
-void LBlock::setDegrees(int a) {
+void LBlock::setDegrees(int a)
+{
 	degrees = a;
 }
 
-void LBlock::render() {
+PixelPoint LBlock::getPixelPoint() const
+{
+	return pixelPoint;
+}
+
+MatrixPoint LBlock::getMatrixPoint() const
+{
+	return matrixPoint;
+}
+
+void LBlock::setPixelPoint(PixelPoint pp)
+{
+	pixelPoint = pp;
+}
+
+void LBlock::setMatrixPoint(MatrixPoint mp)
+{
+	matrixPoint = mp;
+}
+
+
+void LBlock::render() const
+{
 	if (removed)
 		return;
-	mTex->render(pixelPos.x, pixelPos.y, NULL, degrees);
+	mTex->render(pixelPoint.x, pixelPoint.y, nullptr, degrees);
 	// render hightlight
-	if (highlight) {
+	if (highlight)
+	{
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		// Left side rectangle
-		SDL_Rect fillRect = { pixelPos.x, pixelPos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
+		SDL_Rect fillRect = {pixelPoint.x, pixelPoint.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight()};
 		SDL_RenderFillRect(gRenderer, &fillRect);
 		// Right side rectangle
-		fillRect = { pixelPos.x + mTex->getWidth() - HIGHLIGHT_BORDER_WIDTH , pixelPos.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight() };
+		fillRect = {pixelPoint.x + mTex->getWidth() - HIGHLIGHT_BORDER_WIDTH , pixelPoint.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight()};
 		SDL_RenderFillRect(gRenderer, &fillRect);
 		// Top side rectangle
-		fillRect = { pixelPos.x, pixelPos.y, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
+		fillRect = {pixelPoint.x, pixelPoint.y, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH};
 		SDL_RenderFillRect(gRenderer, &fillRect);
 		// Bottom side rectangle
-		fillRect = { pixelPos.x, pixelPos.y + mTex->getHeight() - HIGHLIGHT_BORDER_WIDTH, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH };
+		fillRect = {pixelPoint.x, pixelPoint.y + mTex->getHeight() - HIGHLIGHT_BORDER_WIDTH, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH};
 		SDL_RenderFillRect(gRenderer, &fillRect);
 	}
 }

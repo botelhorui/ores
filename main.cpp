@@ -1,32 +1,31 @@
 //Using SDL, SDL_image, standard IO, math, and strings
 #include <SDL.h>
 #include <SDL_image.h>
-#include <stdio.h>
-#include <string>
-#include <cmath>
+
 #include <vector>
 #include <random>
 #include <algorithm>
-#include <iostream>
-#include "texture.h"
-#include "block.h"
+
 #include "common.h"
+#include "block.h"
+#include "texture.h"
 
 
 //Starts up SDL and creates window
+
 bool init();
 //Loads media
 bool loadMedia();
 //Frees media and shuts down SDL
 void close();
-void handleBlockClick(LBlock* block);
+
 void render();
 
 //The window we'll be rendering to
-SDL_Window* gWindow = NULL;
+SDL_Window* gWindow = nullptr;
 
 //The window renderer
-SDL_Renderer* gRenderer = NULL;
+SDL_Renderer* gRenderer = nullptr;
 
 //Scene texture
 LTexture gRedSquare;
@@ -41,8 +40,16 @@ std::vector<LTexture*> textures;
 /* Time of the start of the timer for the insertion of new columns*/
 int insertTimer;
 
-// Matrix of game blocks
-// it has an extra column to be used to insert the right column
+/** Matrix of game blocks
+ *
+ *	The first dimension are the columns of the matrix
+ *	The second dimension are the lines of the matrix
+ *	
+ *	The first column "matrix[0][x]" represents the left-most column 
+ *	But the first line "matrix[x][0]" represent the lowest line
+ *	
+ *	An extra column is used to insert the new column at the right of the matrix
+ */
 LBlock* matrix[MATRIX_WIDTH + 1][MATRIX_HEIGHT];
 
 // All the blocks of the game
@@ -55,24 +62,24 @@ std::vector<LBlock*> removedBlocks;
 bool piecesAreFalling = false;
 bool insertingColumn = false;
 
-/* Convert a matrix coordinate to a screen pixel XY coordinate*/
-int matrixToPixelHorizontal(int j) {
-	return TEXTURE_SIDE * (MATRIX_LEFT_BORDER + j);
-}
-
-/* Convert a matrix coordinate to a screen pixel XY coordinate*/
-int matrixToPixelVertical(int i) {
-	return SCREEN_HEIGHT - (MATRIX_BOT_BORDER + 1 + i) * TEXTURE_SIDE;
+// Converts
+PixelPoint MatrixToPixelPoint(MatrixPoint mp)
+{
+	int y = SCREEN_HEIGHT - (MATRIX_BOT_BORDER + 1 + mp.i) * TEXTURE_SIDE;
+	int x = TEXTURE_SIDE * (MATRIX_LEFT_BORDER + mp.j);
+	return PixelPoint(x, y);
 }
 
 /* Render the background composed of other images*/
-void drawBackground() {
+void drawBackground()
+{
 	SDL_SetRenderDrawColor(gRenderer, 244, 173, 66, 0xFF);
 	SDL_RenderClear(gRenderer);
 }
 
 /* Generates a random texture from the available ones*/
-LTexture* randomTexture() {
+LTexture* randomTexture()
+{
 	// http://stackoverflow.com/questions/5008804/generating-random-integer-from-a-range
 	std::random_device rd;
 	std::mt19937 rng(rd());
@@ -82,40 +89,51 @@ LTexture* randomTexture() {
 }
 
 /* Add a block to the matrix and list of blocks with a given texture at coordinage (j,i) */
-void addBlock(LTexture* tex, int j, int i) {
+//void addBlock(LTexture* tex, int j, int i) {
+void addBlock(LTexture* tex, MatrixPoint p)
+{
 	LBlock* blk = new LBlock();
 	blk->setTexture(tex);
-	blk->setMatrixPosition(j, i);
-	blk->setRenderPosition(matrixToPixelHorizontal(j), matrixToPixelVertical(i));
-	matrix[j][i] = blk;
+	//blk->setMatrixPos(j, i);
+	blk->setMatrixPoint(p);
+	//blk->setPixelPos(ColumnMatrixToPixel(j), LineMatrixToPixel(i));
+	blk->setPixelPoint(MatrixToPixelPoint(p));
+	matrix[p.j][p.i] = blk;
 	blocks.push_back(blk);
 }
 
 void searchMathingBlocks(LBlock* block);
 
-void handleBlockClick(LBlock* block) {
+// After clicking in a block it will check if there are two or more blocks of the same color
+void handleBlockClick(LBlock* block)
+{
 	// clean blocks search flag
 	for (auto b : blocks)
 		b->searched = false;
-	searchMathingBlocks(block);		
+	searchMathingBlocks(block);
 }
 
 
-/* Mark all the blocks that will be falling due to blocks being removed */
-void markFalling(LBlock* block) {
-	for (int i = block->matrixPos.y; i < MATRIX_HEIGHT; i++) {
-		LBlock* el = matrix[block->matrixPos.x][i];
-		if (el != NULL) {
+/* Mark all the blocks above the given block meaning that they are going to fall due to blocks being removed */
+void markFalling(LBlock* block)
+{
+	for (int i = block->getMatrixPoint().i; i < MATRIX_HEIGHT; i++)
+	{
+		LBlock* el = matrix[block->getMatrixPoint().j][i];
+		if (el != nullptr)
+		{
 			el->falling = true;
 		}
-	}	
+	}
 }
 
-/* Adds to the removed blocks all blocks that match texture*/
-void sweep(LBlock* block, LBlock* other) {
-	if (other != NULL && block->getTexture() == other->getTexture()) {
+/* Adds the two given blocks to the vector of removed blocks when they share the same texture */
+void sweep(LBlock* block, LBlock* other)
+{
+	if (other != nullptr && block->getTexture() == other->getTexture())
+	{
 		// add to the removed blocks if not contained
-		if (std::find(removedBlocks.begin(), removedBlocks.end(), block) == removedBlocks.end()) 
+		if (std::find(removedBlocks.begin(), removedBlocks.end(), block) == removedBlocks.end())
 			removedBlocks.push_back(block);
 		markFalling(block);
 		// add to the removed blocks if not contained
@@ -129,32 +147,36 @@ void sweep(LBlock* block, LBlock* other) {
 }
 
 /* Detect all blocks connected to the first initial block that are of the same color */
-void searchMathingBlocks(LBlock* block) {
+void searchMathingBlocks(LBlock* block)
+{
 	if (block->searched) // avoid infinite loops
 		return;
 	block->searched = true;
 	// handle the top block
-	if (block->matrixPos.y < MATRIX_HEIGHT - 1) {
-		LBlock* top = matrix[block->matrixPos.x][block->matrixPos.y + 1];
-		sweep(block, top);		
+	if (block->getMatrixPoint().i < MATRIX_HEIGHT - 1)
+	{
+		LBlock* top = matrix[block->getMatrixPoint().j][block->getMatrixPoint().i + 1];
+		sweep(block, top);
 	}
 	// handle the bottom block
-	if (block->matrixPos.y > 0) {
-		LBlock* bot = matrix[block->matrixPos.x][block->matrixPos.y - 1];
+	if (block->getMatrixPoint().i > 0)
+	{
+		LBlock* bot = matrix[block->getMatrixPoint().j][block->getMatrixPoint().i - 1];
 		sweep(block, bot);
 	}
 	// handle right block
-	if (block->matrixPos.x < MATRIX_WIDTH - 1) {
-		LBlock* right = matrix[block->matrixPos.x+1][block->matrixPos.y];
+	if (block->getMatrixPoint().j < MATRIX_WIDTH - 1)
+	{
+		LBlock* right = matrix[block->getMatrixPoint().j + 1][block->getMatrixPoint().i];
 		sweep(block, right);
 	}
 	// handle left block
-	if (block->matrixPos.x > 0) {
-		LBlock* left = matrix[block->matrixPos.x-1][block->matrixPos.y];
+	if (block->getMatrixPoint().j > 0)
+	{
+		LBlock* left = matrix[block->getMatrixPoint().j - 1][block->getMatrixPoint().i];
 		sweep(block, left);
 	}
 }
-
 
 
 bool init()
@@ -178,7 +200,7 @@ bool init()
 
 		//Create window
 		gWindow = SDL_CreateWindow("Ores", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-		if (gWindow == NULL)
+		if (gWindow == nullptr)
 		{
 			printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
 			success = false;
@@ -187,7 +209,7 @@ bool init()
 		{
 			//Create vsynced renderer for window
 			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-			if (gRenderer == NULL)
+			if (gRenderer == nullptr)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
 				success = false;
@@ -256,50 +278,89 @@ void close()
 	//Free loaded textures
 	for (LTexture* tex : textures)
 		tex->free();
+
 	textures.clear();
 
-	for (LBlock* blk : blocks) 
-		free(blk);
-	
+	for (LBlock* blk : blocks)
+		delete blk;
 	blocks.clear();
+
+	for (LBlock* blk : removedBlocks)
+		delete blk;
+	removedBlocks.clear();
 
 	//Destroy window	
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-	gRenderer = NULL;
+	gWindow = nullptr;
+	gRenderer = nullptr;
 
 	//Quit SDL subsystems
 	IMG_Quit();
 	SDL_Quit();
 }
 
-bool processFalling() {	
+bool processFalling()
+{
 	int blocksFalling = 0;
 
 	// Calculate the new matrix coordinates of each faling block
-	for (int j = 0; j < MATRIX_WIDTH; j++) {
+	for (int j = 0; j < MATRIX_WIDTH; j++)
+	{
 		int lowest = 0;
-		for (int i = 0; i < MATRIX_HEIGHT; i++) {
-			if (matrix[j][i] != NULL) {
-				LBlock* block = matrix[j][i];				
-				matrix[j][i] = NULL;
+		for (int i = 0; i < MATRIX_HEIGHT; i++)
+		{
+			if (matrix[j][i] != nullptr)
+			{
+				LBlock* block = matrix[j][i];
+				matrix[j][i] = nullptr;
 				matrix[j][lowest] = block;
-				block->setMatrixPosition(j, lowest);				
-				
-				if (lowest != i) {
+				//block->setMatrixPos(j, lowest);				
+				block->setMatrixPoint(MatrixPoint(lowest, j));
+				if (lowest != i)
+				{
 					blocksFalling++;
+					//block->falling = true;
 				}
 				lowest++;
-			}			
+			}
 		}
 	}
-	
+
+
+	int blocksSliding = 0;
+	int rightest = MATRIX_WIDTH - 1;
+	// Calculate the new matrix coordinates of each slidding block to the right
+	for (int j = rightest; j > 0; j--)
+	{
+		if (matrix[j][0] != nullptr)
+		{
+			if (j != rightest)
+			{ // means j has empty collumn to the right				
+				for (int i = 0; i < MATRIX_HEIGHT; i++)
+				{
+					if (matrix[j][i] != nullptr)
+					{
+						LBlock* block = matrix[j][i];
+						blocksSliding++;
+						block->sliding = true;
+						matrix[j][i] = nullptr;
+						matrix[rightest][i] = block;
+						//block->setMatrixPos(highest, i);
+						block->setMatrixPoint(MatrixPoint(i, rightest));
+					}
+				}
+			}
+			rightest--;
+		}
+	}
+
 	int startTime = SDL_GetTicks();
 	SDL_Event e;
 	bool quit = false;
 
-	while (blocksFalling > 0 && !quit ) {
+	while (blocksFalling > 0 && !quit)
+	{
 		while (SDL_PollEvent(&e) != 0)
 		{
 			//User requests quit
@@ -312,42 +373,29 @@ bool processFalling() {
 
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
 
-		for (LBlock* it : blocks) {
-			if (it->falling) {		
-				it->pixelPos.y = it->pixelPos.y + (int)(10*dt + 5*dt*dt);	
-				int yTarget = matrixToPixelVertical(it->matrixPos.y);
-				if (it->pixelPos.y >= yTarget) {
-					it->falling = false;
+		// Fall blocks by moving blocks down step by step
+		for (LBlock* blk : blocks)
+		{
+			if (blk->falling)
+			{
+				int x = blk->getPixelPoint().x;
+				int y = blk->getPixelPoint().y + int(10 * dt + 5 * dt * dt);
+				blk->setPixelPoint(PixelPoint(x, y));
+				auto pp = MatrixToPixelPoint(blk->getMatrixPoint());
+				int yTarget = pp.y;
+				if (blk->getPixelPoint().y >= yTarget)
+				{
+					blk->falling = false;
 					blocksFalling--;
-					it->pixelPos.y = yTarget;
+					blk->setPixelPoint(PixelPoint(x, yTarget));
 				}
 			}
 		}
 		render();
-
-	}
-	int blocksSliding = 0;
-	int highest = MATRIX_WIDTH-1;
-	for (int j = highest; j > 0; j--) {
-		if (matrix[j][0] != NULL) {
-			if (j != highest) { // means j has empty collumn to the right				
-				for (int i = 0; i < MATRIX_HEIGHT; i++) {
-					if (matrix[j][i] != NULL) {
-						LBlock* block = matrix[j][i];
-						blocksSliding++;
-						block->falling = true;
-						matrix[j][i] = NULL;
-						matrix[highest][i] = block;
-						block->setMatrixPosition(highest, i);
-					}
-				}				
-			}
-			highest--;
-		}
-			
 	}
 
-	while (blocksSliding > 0 && !quit) {
+	while (blocksSliding > 0 && !quit)
+	{
 		while (SDL_PollEvent(&e) != 0)
 		{
 			//User requests quit
@@ -358,15 +406,21 @@ bool processFalling() {
 			}
 		}
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
-
-		for (LBlock* it : blocks) {
-			if (it->falling) {
-				it->pixelPos.x = it->pixelPos.x + (int)(10 * dt + 5 * dt*dt);
-				int xTarget = matrixToPixelHorizontal(it->matrixPos.x);
-				if (it->pixelPos.x >= xTarget) {
-					it->falling = false;
+		// Slide blocks by moving blocks rightway step by step
+		for (LBlock* blk : blocks)
+		{
+			if (blk->sliding)
+			{
+				int x = blk->getPixelPoint().x + int(10 * dt + 5 * dt * dt);
+				int y = blk->getPixelPoint().y;
+				blk->setPixelPoint(PixelPoint(x, y));
+				auto pp = MatrixToPixelPoint(blk->getMatrixPoint());
+				int xTarget = pp.x;
+				if (blk->getPixelPoint().x >= xTarget)
+				{
+					blk->sliding = false;
 					blocksSliding--;
-					it->pixelPos.x = xTarget;
+					blk->setPixelPoint(PixelPoint(xTarget, y));
 				}
 			}
 		}
@@ -378,42 +432,121 @@ bool processFalling() {
 }
 
 
-
-void gameOver() {
-
+void gameOver()
+{
 }
 
-bool processColumnInsertion() {
+bool processColumnInsertion();
+
+void generateWorldaa()
+{
+	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
+	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 1));
+	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
+	addBlock(&gBlueSquare, MatrixPoint(1, MATRIX_WIDTH - 2));
+	addBlock(&gRedSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
+	addBlock(&gRedSquare, MatrixPoint(1, MATRIX_WIDTH - 3));
+	addBlock(&gYellowSquare, MatrixPoint(2, MATRIX_WIDTH - 3));
+}
+
+void generateWorld()
+{
+	for (int j = 0; j < MATRIX_WIDTH; j++)
+	{
+		addBlock(randomTexture(), MatrixPoint(0, j));
+	}
+}
+
+// Generate a random rectangle of blocks starting at the game first column
+void generateWorld788()
+{
+	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++)
+	{
+		for (int i = 0; i < MATRIX_HEIGHT; i++)
+		{
+			addBlock(randomTexture(), MatrixPoint(i, j));
+		}
+	}
+}
+
+
+void initWorld()
+{
+	for (int i = 0; i < MATRIX_HEIGHT; i++)
+		for (int j = 0; j < MATRIX_WIDTH + 1; j++)
+			matrix[i][j] = nullptr;
+
+	
+	insertTimer = SDL_GetTicks();
+}
+
+
+void render()
+{
+	drawBackground();
+
+	// render remaining time for insertion bar
+	if (!insertingColumn)
+	{
+		double w = (SDL_GetTicks() - insertTimer) / double(TIMER_CLICKS);
+		if (w >= 1.0)
+		{
+			insertTimer = SDL_GetTicks();
+			insertingColumn = true;
+			w = 1.0;
+		}
+		SDL_Rect rect = {TIMER_POS_X, TIMER_POS_Y, int(w * TIMER_WIDTH), TIMER_HEIGHT};
+		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x22, 0x00, 0xFF);
+		SDL_RenderFillRect(gRenderer, &rect);
+	}
+
+	//Render blocks
+	for (LBlock* blk : blocks)
+	{
+		blk->render();
+	}
+
+	//Update screen
+	SDL_RenderPresent(gRenderer);
+}
+
+bool processColumnInsertion()
+{
 	SDL_Event e;
 
 	bool quit = false;
 	// create random column
-	int j = MATRIX_WIDTH; //last column
-	for (int i = 0; i < MATRIX_HEIGHT; i++) {
+	for (int i = 0; i < MATRIX_HEIGHT; i++)
+	{
 		// plane column just outside the screen to the right
-		addBlock(randomTexture(), j, i);
-	}		
-	
-	if (matrix[0][0] != NULL) { //if the first column is not NULL then the game is over
+		addBlock(randomTexture(), MatrixPoint(i, MATRIX_WIDTH));
+	}
+
+	if (matrix[0][0] != nullptr)
+	{ //if the first column is not NULL then the game is over
 		gameOver();
 		quit = true;
 		return quit;
 	}
-	// make column slide to the left until next to the last column
-	for (int j = 1; j < MATRIX_WIDTH + 1; j++) {
-		for (int i = 0; i < MATRIX_HEIGHT; i++) {
+	// makes all columns shift to the left
+	for (int j = 1; j < MATRIX_WIDTH + 1; j++)
+	{
+		for (int i = 0; i < MATRIX_HEIGHT; i++)
+		{
 			LBlock* blk = matrix[j][i];
-			if (blk == NULL)
+			if (blk == nullptr)
 				continue;
-			matrix[j - 1][i] = matrix[j][i];
-			matrix[j][i]->matrixPos.x--;
-			matrix[j][i] = NULL;
+			matrix[j - 1][i] = blk;
+			//int newj = blk->getMatrixPoint().j - 1;
+			matrix[j][i]->setMatrixPoint(MatrixPoint(i, j - 1));
+			matrix[j][i] = nullptr;
 		}
 	}
 	int startTime = SDL_GetTicks();
 	bool finished = false;
 
-	while (!finished && !quit) {
+	while (!finished && !quit)
+	{
 		while (SDL_PollEvent(&e) != 0)
 		{
 			//User requests quit
@@ -426,83 +559,30 @@ bool processColumnInsertion() {
 
 		// make all blocks slide one block to the left and adjust the render and matrix positions
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
-		
-		for (LBlock* it : blocks) {			
-			it->pixelPos.x = it->pixelPos.x - (int)(5 * dt + 5 * dt*dt);
-		
-			int xTarget = matrixToPixelHorizontal(it->matrixPos.x);
-			if (it->pixelPos.x <= xTarget) {
-				finished = true; // when one block is aligned then all other are too
-				it->pixelPos.x = xTarget;
+
+		for (LBlock* blk : blocks)
+		{
+			int x = blk->getPixelPoint().x;
+			int y = blk->getPixelPoint().y + int(10 * dt + 5 * dt * dt);
+			blk->setPixelPoint(PixelPoint(x, y));
+			auto pp = MatrixToPixelPoint(blk->getMatrixPoint());
+			int xTarget = pp.x;
+			if (blk->getPixelPoint().x <= xTarget)
+			{
+				finished = true; // once one block has shifted then all blocks will be shifted after for loop
+				blk->setPixelPoint(PixelPoint(xTarget, y));
 			}
 		}
 
 		render();
-
 	}
 
 	return quit;
 }
 
-/* Used for tests */
-void generateWorld2() {
-	int j = GAME_FIRST_COLUMN;
-
-	addBlock(&gGreenSquare, j, 1);
-	addBlock(&gGreenSquare, j, 2);
-	addBlock(&gGreySquare, j, 3);
-	addBlock(&gRedSquare, j++, 0);
-	for (; j < MATRIX_WIDTH; j++)
-		addBlock(&gBlueSquare, j, 0);
-}
-
-
-void generateWorld() {	
-	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++) {
-		for (int i = 0; i < MATRIX_HEIGHT; i++) {
-			addBlock(randomTexture(), j, i);
-		}
-	}
-}
-
-void initWorld() {
-	for (int i = 0; i < MATRIX_HEIGHT; i++)
-		for (int j = 0; j < MATRIX_WIDTH+1; j++)
-			matrix[i][j] = NULL;
-
-	insertTimer = SDL_GetTicks();
-}
-
-
-
-
-void render() {
-	drawBackground();
-
-	// render remaining time bar
-	if (!insertingColumn) {
-		double w = (SDL_GetTicks() - insertTimer) / (double)TIMER_CLICKS;
-		if (w >= 1.0) {
-			insertTimer = SDL_GetTicks();
-			insertingColumn = true;
-			w = 1.0;
-		}
-		SDL_Rect rect = { TIMER_POS_X, TIMER_POS_Y, (int)(w * TIMER_WIDTH), TIMER_HEIGHT };
-		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x22, 0x00, 0xFF);
-		SDL_RenderFillRect(gRenderer, &rect);
-	}
-
-	//Render blocks
-	for (LBlock* it : blocks) {
-		it->render();
-	}
-
-	//Update screen
-	SDL_RenderPresent(gRenderer);
-}
-
 /* Game loop  */
-void gameLoop() {
+void gameLoop()
+{
 	initWorld();
 	generateWorld();
 
@@ -525,33 +605,34 @@ void gameLoop() {
 			}
 
 			// handle mouse highlight and clicks on each block
-			for (LBlock* it : blocks) {				
-				it->handleEvent(&e);
+			for (LBlock* blk : blocks)
+			{
+				blk->handleEvent(&e);
 			}
 		}
 
 		// remove matched blocks from the vector of blocks
-		for (LBlock* it : removedBlocks) {
-			matrix[it->matrixPos.x][it->matrixPos.y] = NULL;
-			blocks.erase(std::remove(blocks.begin(), blocks.end(), it), blocks.end());
+		for (LBlock* blk : removedBlocks)
+		{
+			matrix[blk->getMatrixPoint().j][blk->getMatrixPoint().i] = nullptr;
+			blocks.erase(std::remove(blocks.begin(), blocks.end(), blk), blocks.end());
 		}
-		// TODO ..
-		removedBlocks.clear();
-		
-		render();		
 
-		if (piecesAreFalling) {
+		removedBlocks.clear();
+
+		render();
+
+		if (piecesAreFalling)
+		{
 			quit = processFalling();
 			piecesAreFalling = false;
 		}
 
-		if (insertingColumn) {
+		if (insertingColumn)
+		{
 			quit = processColumnInsertion();
 			insertingColumn = false;
 		}
-
-
-
 	}
 }
 
