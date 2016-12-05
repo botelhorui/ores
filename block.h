@@ -47,6 +47,7 @@ public:
 
 	/*
 	SDL_Point pixelPos;	
+	
 	SDL_Point matrixPos;
 	*/
 
