@@ -2,7 +2,7 @@
 #include <SDL.h>
 
 #include "texture.h"
-#include "structs.h"
+#include "geral.h"
 
 
 //#include "common.h"

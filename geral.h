@@ -1,6 +1,8 @@
 #pragma once
 #include <SDL.h>
 
+class LTexture;
+
 /*
 * Represents the coordinates of a pixel in the screen
 * the x values grow from left to right of the screen,
@@ -22,9 +24,21 @@ public:
 	int j = 0; // column
 };
 
+// TODO
 /*
 class GameManager {
 SDL_Renderer* gRenderer;
 }*/
 
 extern SDL_Renderer* gRenderer;
+
+void addBlock(LTexture* tex, MatrixPoint p);
+void generateWorld();
+LTexture* randomTexture();
+
+//Scene texture
+extern LTexture gRedSquare;
+extern LTexture gGreySquare;
+extern LTexture gGreenSquare;
+extern LTexture gBlueSquare;
+extern LTexture gYellowSquare;

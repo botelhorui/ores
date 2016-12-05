@@ -1,6 +1,6 @@
 #include "texture.h"
 #include <SDL_image.h>
-#include "structs.h"
+#include "geral.h"
 
 
 LTexture::LTexture()

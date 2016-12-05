@@ -1,4 +1,4 @@
-#include "structs.h"
+#include "geral.h"
 
 PixelPoint::PixelPoint(int x, int y): x(x), y(y)
 {

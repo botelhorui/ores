@@ -6,7 +6,7 @@
 #include <random>
 #include <algorithm>
 
-#include "common.h"
+#include "constants.h"
 #include "block.h"
 #include "texture.h"
 
@@ -107,7 +107,7 @@ void searchMathingBlocks(LBlock* block);
 // After clicking in a block it will check if there are two or more blocks of the same color
 void handleBlockClick(LBlock* block)
 {
-	// clean blocks search flag
+	// clean blocks searched flag
 	for (auto b : blocks)
 		b->searched = false;
 	searchMathingBlocks(block);
@@ -331,7 +331,7 @@ bool processFalling()
 	int blocksSliding = 0;
 	int rightest = MATRIX_WIDTH - 1;
 	// Calculate the new matrix coordinates of each slidding block to the right
-	for (int j = rightest; j > 0; j--)
+	for (int j = rightest; j >= 0; j--)
 	{
 		if (matrix[j][0] != nullptr)
 		{
@@ -438,36 +438,6 @@ void gameOver()
 
 bool processColumnInsertion();
 
-void generateWorldaa()
-{
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
-	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 1));
-	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
-	addBlock(&gBlueSquare, MatrixPoint(1, MATRIX_WIDTH - 2));
-	addBlock(&gRedSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
-	addBlock(&gRedSquare, MatrixPoint(1, MATRIX_WIDTH - 3));
-	addBlock(&gYellowSquare, MatrixPoint(2, MATRIX_WIDTH - 3));
-}
-
-void generateWorld()
-{
-	for (int j = 0; j < MATRIX_WIDTH; j++)
-	{
-		addBlock(randomTexture(), MatrixPoint(0, j));
-	}
-}
-
-// Generate a random rectangle of blocks starting at the game first column
-void generateWorld788()
-{
-	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++)
-	{
-		for (int i = 0; i < MATRIX_HEIGHT; i++)
-		{
-			addBlock(randomTexture(), MatrixPoint(i, j));
-		}
-	}
-}
 
 
 void initWorld()
@@ -562,8 +532,8 @@ bool processColumnInsertion()
 
 		for (LBlock* blk : blocks)
 		{
-			int x = blk->getPixelPoint().x;
-			int y = blk->getPixelPoint().y + int(10 * dt + 5 * dt * dt);
+			int x = blk->getPixelPoint().x- int(10 * dt + 5 * dt * dt);
+			int y = blk->getPixelPoint().y ;
 			blk->setPixelPoint(PixelPoint(x, y));
 			auto pp = MatrixToPixelPoint(blk->getMatrixPoint());
 			int xTarget = pp.x;
