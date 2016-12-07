@@ -45,11 +45,20 @@ public:
 
 	void setMatrixPoint(MatrixPoint mp);
 
-	/*
-	SDL_Point pixelPos;	
-	
-	SDL_Point matrixPos;
-	*/
+
+	//Set alpha modulation
+	void setAlpha(Uint8 alpha);
+
+	Uint32 getAlpha() const;
+
+	// VX
+	int velocityX;
+
+	// VY
+	int velocityY;
+
+	//
+	int angularVelocity;
 
 	// Rotation of the block, used for the animation of falling
 	int degrees;
@@ -64,11 +73,13 @@ public:
 	bool sliding;
 
 private:
+	//Alpha Modulation component
+	Uint8 alpha = 255;
 
 	LTexture* mTex;
 
 	// Indicates that the block had the cursor over it and therefore it is highlighted
-	bool highlight;
+	bool cursorHovering;
 
 	// Indicates if the mouse is pressing and holding the mouse 1 inside the block
 	bool blockBeingClicked;

@@ -27,6 +27,9 @@ SDL_Window* gWindow = nullptr;
 //The window renderer
 SDL_Renderer* gRenderer = nullptr;
 
+
+bool blocksSplashing = false;
+
 //Scene texture
 LTexture gRedSquare;
 LTexture gGreySquare;
@@ -62,6 +65,10 @@ std::vector<LBlock*> removedBlocks;
 bool piecesAreFalling = false;
 bool insertingColumn = false;
 
+
+
+
+
 // Converts
 PixelPoint MatrixToPixelPoint(MatrixPoint mp)
 {
@@ -73,8 +80,15 @@ PixelPoint MatrixToPixelPoint(MatrixPoint mp)
 /* Render the background composed of other images*/
 void drawBackground()
 {
+	// background color
 	SDL_SetRenderDrawColor(gRenderer, 244, 173, 66, 0xFF);
 	SDL_RenderClear(gRenderer);
+	// rectangle under matrix
+	auto pp = MatrixToPixelPoint(MatrixPoint(0, 0));
+	pp.y += TEXTURE_SIDE + 10;
+	SDL_Rect rect = { pp.x, pp.y, MATRIX_WIDTH*TEXTURE_SIDE, 10 };
+	SDL_SetRenderDrawColor(gRenderer, 0xFF, 125, 0x00, 0x00);
+	SDL_RenderFillRect(gRenderer, &rect);
 }
 
 /* Generates a random texture from the available ones*/
@@ -300,10 +314,79 @@ void close()
 	SDL_Quit();
 }
 
+
+void removedBlocksSplash(double dt)
+{
+	if(removedBlocks.size() > 0)
+	{
+		/* TODO
+		* calculate new x
+		* calculate new y
+		* calculate new angle
+		* delete from removedBlocks when block outside screen,
+		* call delete on the block to free memory
+		*/
+		std::vector<LBlock*> outsideBlocks;
+		for (auto blk : removedBlocks)
+		{
+			int x = blk->getPixelPoint().x + int(blk->velocityX * dt);
+			int y = blk->getPixelPoint().y + int(blk->velocityY * dt + 10 * dt * dt);
+			int a = blk->degrees + blk->angularVelocity * dt;
+			blk->setDegrees(a);
+			blk->setPixelPoint(PixelPoint(x, y));
+
+			if (x < 0)
+			{
+				outsideBlocks.push_back(blk);
+			}
+			if (x > SCREEN_WIDTH - 1)
+			{
+				outsideBlocks.push_back(blk);
+			}
+			if (y < 0) {
+				outsideBlocks.push_back(blk);
+			}
+			if (y > SCREEN_HEIGHT - 1) {
+				outsideBlocks.push_back(blk);
+			}
+		}
+
+		for (auto oblk : outsideBlocks)
+			removedBlocks.erase(std::remove(removedBlocks.begin(), removedBlocks.end(), oblk), removedBlocks.end());
+	}
+}
+
+void initRemovedBlocks()
+{
+	// remove matched blocks from the vector of blocks
+	for (LBlock* blk : removedBlocks)
+	{
+		//mTex->setAlpha(255);
+		matrix[blk->getMatrixPoint().j][blk->getMatrixPoint().i] = nullptr;
+		blocks.erase(std::remove(blocks.begin(), blocks.end(), blk), blocks.end());
+	}
+
+
+	for (auto blk : removedBlocks)
+	{
+		/*TODO
+		* get random x velocity (-XV,+XV)
+		* get random y velocity (-YV,+YV)
+		* get random w angular speed (-90,-45) U (45, 90), experimental values
+		* gravity "g" constance can be lower to give effect that deleted blocks are light weight
+		* angular acceleration is not applicable since there is no force making the blocks rotate faster
+		*/
+		blk->velocityX = fRand(-3, 3);
+		blk->velocityY = fRand(0, 10);
+		blk->angularVelocity = fRand(-15, 15);
+	}
+}
+
 bool processFalling()
 {
-	int blocksFalling = 0;
+	initRemovedBlocks();
 
+	int blocksFalling = 0;
 	// Calculate the new matrix coordinates of each faling block
 	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
@@ -345,8 +428,7 @@ bool processFalling()
 						blocksSliding++;
 						block->sliding = true;
 						matrix[j][i] = nullptr;
-						matrix[rightest][i] = block;
-						//block->setMatrixPos(highest, i);
+						matrix[rightest][i] = block;						
 						block->setMatrixPoint(MatrixPoint(i, rightest));
 					}
 				}
@@ -372,6 +454,8 @@ bool processFalling()
 		}
 
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
+		//
+		removedBlocksSplash(dt);
 
 		// Fall blocks by moving blocks down step by step
 		for (LBlock* blk : blocks)
@@ -406,6 +490,9 @@ bool processFalling()
 			}
 		}
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
+		//
+		removedBlocksSplash(dt);
+
 		// Slide blocks by moving blocks rightway step by step
 		for (LBlock* blk : blocks)
 		{
@@ -427,6 +514,17 @@ bool processFalling()
 
 		render();
 	}
+	
+	while(removedBlocks.size() > 0)
+	{
+		double dt = (SDL_GetTicks() - startTime) / 1000.0;
+		removedBlocksSplash(dt);
+		render();
+	}
+		
+	
+	// TODO remove because it becomes empty
+	removedBlocks.clear();
 
 	return quit;
 }
@@ -436,7 +534,6 @@ void gameOver()
 {
 }
 
-bool processColumnInsertion();
 
 
 
@@ -470,9 +567,17 @@ void render()
 		SDL_RenderFillRect(gRenderer, &rect);
 	}
 
+	
 	//Render blocks
 	for (LBlock* blk : blocks)
 	{
+		blk->render();
+	}
+
+	//Render splash blocks
+	for (auto blk : removedBlocks)
+	{
+		blk->setAlpha(230);
 		blk->render();
 	}
 
@@ -483,8 +588,10 @@ void render()
 bool processColumnInsertion()
 {
 	SDL_Event e;
-
+	int startTime = SDL_GetTicks();
+	bool finished = false;
 	bool quit = false;
+
 	// create random column
 	for (int i = 0; i < MATRIX_HEIGHT; i++)
 	{
@@ -494,7 +601,59 @@ bool processColumnInsertion()
 
 	if (matrix[0][0] != nullptr)
 	{ //if the first column is not NULL then the game is over
-		gameOver();
+		finished = false;
+		quit = false;
+
+		int xTarget = matrix[0][0]->getPixelPoint().x - TEXTURE_SIDE;
+
+		while (!finished && !quit)
+		{
+			while (SDL_PollEvent(&e) != 0)
+			{
+				//User requests quit
+				if (e.type == SDL_QUIT)
+				{
+					quit = true;
+					return quit;
+				}
+			}
+
+			// make all blocks slide one block to the left and adjust the render and matrix positions
+			double dt = (SDL_GetTicks() - startTime) / 1000.0;
+			
+			for (LBlock* blk : blocks)
+			{
+				int x = blk->getPixelPoint().x - int(10*dt);
+				int y = blk->getPixelPoint().y;
+				blk->setPixelPoint(PixelPoint(x, y));
+				int cx = blk->getPixelPoint().x;
+				if (cx <= xTarget)
+				{
+					finished = true; // once one block has shifted then all blocks will be shifted after for loop
+					blk->setPixelPoint(PixelPoint(xTarget, y));
+				}
+			}
+
+			for(int i=0; i < MATRIX_HEIGHT; i++)
+			{
+				if (matrix[0][i] == nullptr)
+					break;
+				removedBlocks.push_back(matrix[0][i]);
+			}
+
+			render();
+		}
+		startTime = SDL_GetTicks();
+		initRemovedBlocks();
+		while (removedBlocks.size() > 0)
+		{
+			double dt = (SDL_GetTicks() - startTime) / 1000.0;
+			removedBlocksSplash(dt);
+			render();
+		}
+
+
+		gameOver();		
 		quit = true;
 		return quit;
 	}
@@ -512,8 +671,7 @@ bool processColumnInsertion()
 			matrix[j][i] = nullptr;
 		}
 	}
-	int startTime = SDL_GetTicks();
-	bool finished = false;
+
 
 	while (!finished && !quit)
 	{
@@ -581,14 +739,7 @@ void gameLoop()
 			}
 		}
 
-		// remove matched blocks from the vector of blocks
-		for (LBlock* blk : removedBlocks)
-		{
-			matrix[blk->getMatrixPoint().j][blk->getMatrixPoint().i] = nullptr;
-			blocks.erase(std::remove(blocks.begin(), blocks.end(), blk), blocks.end());
-		}
-
-		removedBlocks.clear();
+		
 
 		render();
 

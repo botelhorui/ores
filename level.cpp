@@ -16,7 +16,7 @@
 /*
  * #######
  */
-void generateWorldadfa()
+void generateWorldfgfg()
 {
 	for(int j = 0; j < MATRIX_WIDTH; j++)
 	{
@@ -55,7 +55,7 @@ void generateWorldasf()
  * O
  * O###########
  */
-void generateWorldaadsada()
+void generateWorldasd()
 {
 	for (int i = 0; i < MATRIX_HEIGHT; i++)
 	{
@@ -73,18 +73,21 @@ void generateWorldaadsada()
 *  OOOOOOOOOO
 *  OOOOOOOOOO##
 */
-void generateWorldbb()
+void generateWorldfghfgh()
 {
 	
 	for (int j = 0; j < MATRIX_WIDTH-2; j++)
 	{
 		for (int i = 0; i < MATRIX_HEIGHT; i++)
 		{
+			if (j == MATRIX_WIDTH - 3 && i==0)
+				i = 1;
 			addBlock(&gBlueSquare, MatrixPoint(i, j));
 		}		
 	}
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
+	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
 }
 
 /*
@@ -95,7 +98,7 @@ void generateWorldbb()
  * O
  * O
  */
-void generateWorldadadad()
+void generateWorldccc()
 {
 	for(int i=0; i < MATRIX_HEIGHT -1; i++)
 	{
@@ -130,7 +133,7 @@ void generateWorldasdfsd()
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  */
-void generateWorldffff()
+void generateWorldssss()
 {
 	for(int i=0; i < MATRIX_HEIGHT-1; i++)
 	{
@@ -172,7 +175,7 @@ void generateWorldada()
  * O
  * O
  */
-void generateWorldadad()
+void generateWorldasdasd()
 {
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
 	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 1));
@@ -185,11 +188,11 @@ void generateWorldadad()
 
 
 /**
- * V
+ * V 
  * O
  * OXX
  */
-void generateWorldadasaa()
+void generateWorld6696()
 {
 	addBlock(&gYellowSquare, MatrixPoint(2, MATRIX_WIDTH - 3));
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));

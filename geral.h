@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <cstdlib>
 
 class LTexture;
 
@@ -42,3 +43,9 @@ extern LTexture gGreySquare;
 extern LTexture gGreenSquare;
 extern LTexture gBlueSquare;
 extern LTexture gYellowSquare;
+
+inline double fRand(double fMin, double fMax)
+{
+	double f = double(rand()) / RAND_MAX;
+	return fMin + f * (fMax - fMin);
+}

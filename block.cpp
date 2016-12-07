@@ -4,14 +4,14 @@
 
 void handleBlockClick(LBlock* block);
 
-LBlock::LBlock(): pixelPoint(0, 0), matrixPoint(0, 0)
+LBlock::LBlock(): velocityX(0), velocityY(0), angularVelocity(0), pixelPoint(0, 0), matrixPoint(0, 0)
 {
 	degrees = 0;
 	falling = false;
 	searched = false;
 	sliding = false;
 	mTex = nullptr;
-	highlight = false;
+	cursorHovering = false;
 	blockBeingClicked = false;
 	removed = false;
 }
@@ -73,7 +73,7 @@ void LBlock::handleEvent(SDL_Event* e)
 				blockBeingClicked = false;
 			}
 		}
-		highlight = mouseInsideBlock;
+		cursorHovering = mouseInsideBlock;
 	}
 }
 
@@ -102,14 +102,25 @@ void LBlock::setMatrixPoint(MatrixPoint mp)
 	matrixPoint = mp;
 }
 
+void LBlock::setAlpha(Uint8 alpha)
+{
+	this->alpha = alpha;
+}
 
+Uint32 LBlock::getAlpha() const
+{
+	return alpha;
+}
 void LBlock::render() const
 {
 	if (removed)
 		return;
+	// render texture
+	mTex->setAlpha(getAlpha());
 	mTex->render(pixelPoint.x, pixelPoint.y, nullptr, degrees);
+	mTex->setAlpha(255); // 255 no transparent
 	// render hightlight
-	if (highlight)
+	if (cursorHovering)
 	{
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		// Left side rectangle
