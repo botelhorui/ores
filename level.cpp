@@ -133,7 +133,7 @@ void generateWorldasdfsd()
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  */
-void generateWorldssss()
+void generateWorld()
 {
 	for(int i=0; i < MATRIX_HEIGHT-1; i++)
 	{
@@ -203,7 +203,7 @@ void generateWorld6696()
 }
 
 // Generate a random rectangle of blocks starting at the game first column
-void generateWorld()
+void generateWorldadsad()
 {
 	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++)
 	{

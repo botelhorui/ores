@@ -1,6 +1,8 @@
 //Using SDL, SDL_image, standard IO, math, and strings
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL.h> //http://libsdl.org/download-2.0.php
+#include <SDL_image.h> //https://www.libsdl.org/projects/SDL_image/
+#include <SDL_mixer.h> //https://www.libsdl.org/projects/SDL_mixer/
+
 
 #include <vector>
 #include <random>
@@ -27,6 +29,10 @@ SDL_Window* gWindow = nullptr;
 //The window renderer
 SDL_Renderer* gRenderer = nullptr;
 
+//The sound effects that will be used
+Mix_Chunk *gClickBlock = nullptr;
+Mix_Chunk *gColumnInsertion = nullptr;
+Mix_Chunk *gGameOver = nullptr;
 
 bool blocksSplashing = false;
 
@@ -199,7 +205,7 @@ bool init()
 	bool success = true;
 
 	//Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 	{
 		printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
 		success = false;
@@ -239,6 +245,14 @@ bool init()
 				{
 					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
 					success = false;
+				}else
+				{					
+					//Initialize SDL_mixer
+					if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+					{
+						printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+						success = false;
+					}
 				}
 			}
 		}
@@ -284,6 +298,30 @@ bool loadMedia()
 		success = false;
 	}
 	textures.push_back(&gYellowSquare);
+
+	//Load sound effects
+	gClickBlock = Mix_LoadWAV("../resources/metal.click.wav");
+	if (gClickBlock == nullptr)
+	{
+		printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
+		success = false;
+	}
+	//Load sound effects
+	gColumnInsertion = Mix_LoadWAV("../resources/slidding.wav");
+	if (gColumnInsertion == nullptr)
+	{
+		printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
+		success = false;
+	}
+	//Load sound effects
+	gGameOver = Mix_LoadWAV("../resources/gameover.wav");
+	if (gGameOver == nullptr)
+	{
+		printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
+		success = false;
+	}
+
+
 	return success;
 }
 
@@ -303,6 +341,14 @@ void close()
 		delete blk;
 	removedBlocks.clear();
 
+	//Free the sound effects
+	Mix_FreeChunk(gClickBlock);
+	Mix_FreeChunk(gGameOver);
+	Mix_FreeChunk(gColumnInsertion);
+	gClickBlock = nullptr;
+	gGameOver = nullptr;
+	gColumnInsertion = nullptr;
+
 	//Destroy window	
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -310,6 +356,7 @@ void close()
 	gRenderer = nullptr;
 
 	//Quit SDL subsystems
+	Mix_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
@@ -532,6 +579,8 @@ bool processFalling()
 
 void gameOver()
 {
+	Mix_PlayChannel(-1, gGameOver, 0);
+	SDL_Delay(6000);
 }
 
 
@@ -587,6 +636,7 @@ void render()
 
 bool processColumnInsertion()
 {
+	Mix_PlayChannel(-1, gColumnInsertion, 0);
 	SDL_Event e;
 	int startTime = SDL_GetTicks();
 	bool finished = false;
@@ -653,8 +703,9 @@ bool processColumnInsertion()
 		}
 
 
-		gameOver();		
-		quit = true;
+		gameOver();
+		
+		quit = true;				
 		return quit;
 	}
 	// makes all columns shift to the left
@@ -745,13 +796,15 @@ void gameLoop()
 
 		if (piecesAreFalling)
 		{
+			Mix_PlayChannel(-1, gColumnInsertion, 0);
 			quit = processFalling();
 			piecesAreFalling = false;
 		}
 
 		if (insertingColumn)
-		{
-			quit = processColumnInsertion();
+		{			
+			
+			quit = processColumnInsertion();		
 			insertingColumn = false;
 		}
 	}
@@ -777,7 +830,7 @@ int main(int argc, char* args[])
 			gameLoop();
 		}
 	}
-
+	
 	//Free resources and close SDL
 	close();
 
