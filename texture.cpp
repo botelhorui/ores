@@ -2,15 +2,6 @@
 #include <SDL_image.h>
 #include "geral.h"
 
-
-LTexture::LTexture()
-{
-	//Initialize
-	mTexture = nullptr;
-	mWidth = 0;
-	mHeight = 0;
-}
-
 LTexture::~LTexture()
 {
 	//Deallocate

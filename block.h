@@ -10,8 +10,6 @@
 class LBlock
 {
 public:
-	// Initializes variables
-	LBlock();
 
 	// Handles mouse events
 	void handleEvent(SDL_Event* e);
@@ -52,44 +50,44 @@ public:
 	Uint32 getAlpha() const;
 
 	// VX
-	int velocityX;
+	int velocityX = 0;
 
 	// VY
-	int velocityY;
+	int velocityY = 0;
 
 	//
-	int angularVelocity;
+	int angularVelocity = 0;
 
 	// Rotation of the block, used for the animation of falling
-	int degrees;
+	int degrees = 0;
 
 	// true when doing depth first search and had already been tested if the texture matches with adjacent block
-	bool searched;
+	bool searched = false;
 
 	// True when the block is falling after some of the blocks below were matched
-	bool falling;
+	bool falling = false;
 
 	// True when there is an empty column and the block is moving to the right to occupy that collumn
-	bool sliding;
+	bool sliding = false;
 
 private:
 	//Alpha Modulation component
 	Uint8 alpha = 255;
 
-	LTexture* mTex;
+	LTexture* mTex = nullptr;
 
 	// Indicates that the block had the cursor over it and therefore it is highlighted
-	bool cursorHovering;
+	bool cursorHovering = false;
 
 	// Indicates if the mouse is pressing and holding the mouse 1 inside the block
-	bool blockBeingClicked;
+	bool blockBeingClicked = false;
 
 	// the block matched the same color of adjacent clicked blocks
-	bool removed;
+	bool removed = false;
 
 	// Position in the SDL screen
-	PixelPoint pixelPoint;
+	PixelPoint pixelPoint = PixelPoint(0, 0);
 
 	// Position in the game matrix
-	MatrixPoint matrixPoint;
+	MatrixPoint matrixPoint = MatrixPoint(0, 0);
 };

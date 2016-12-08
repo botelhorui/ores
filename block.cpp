@@ -4,18 +4,6 @@
 
 void handleBlockClick(LBlock* block);
 
-LBlock::LBlock(): velocityX(0), velocityY(0), angularVelocity(0), pixelPoint(0, 0), matrixPoint(0, 0)
-{
-	degrees = 0;
-	falling = false;
-	searched = false;
-	sliding = false;
-	mTex = nullptr;
-	cursorHovering = false;
-	blockBeingClicked = false;
-	removed = false;
-}
-
 void LBlock::setTexture(LTexture* tex)
 {
 	mTex = tex;

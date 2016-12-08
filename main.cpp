@@ -181,7 +181,7 @@ private:
 	bool beingClicked;
 };
 
-StartScreen starScreen;
+StartScreen startScreen;
 GameoverScreen gameoverScreen;
 
 // Converts
@@ -921,7 +921,7 @@ bool processColumnInsertion()
 }
 
 /* Game loop  */
-void gameLoop()
+bool gameLoop()
 {
 	initWorld();
 	generateWorld();
@@ -967,6 +967,8 @@ void gameLoop()
 			gInsertingColumn = false;
 		}
 	}
+
+	return quit;
 }
 
 
@@ -1006,21 +1008,23 @@ int main(int argc, char* args[])
 
 					if (gCurrentScreenStartScreen)
 					{
-						starScreen.handleEvent(&e);
+						startScreen.handleEvent(&e);
 					}
 					else //game over
 					{
 						gameoverScreen.handleEvent(&e);
 					}
 				}
+				if (quit)
+					break;
 
 				if (gCurrentScreenStartScreen)
 				{
-					starScreen.render();
+					startScreen.render();
 				}
 				else if (gCurrentScreenGame)
 				{
-					gameLoop();
+					quit = gameLoop();
 				}
 				else if (gCurrentScreenGameover)
 				{
@@ -1029,7 +1033,7 @@ int main(int argc, char* args[])
 				else // default case, hope it doesnt happen
 				{
 					std::cout << "Invalid game state, defaulting to start screen";
-					starScreen.render();
+					startScreen.render();
 				}
 			}
 		}
