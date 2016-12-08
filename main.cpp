@@ -31,9 +31,9 @@ SDL_Window* gWindow = nullptr;
 SDL_Renderer* gRenderer = nullptr;
 
 //The sound effects that will be used
-Mix_Chunk *gClickBlockSound = nullptr;
-Mix_Chunk *gColumnInsertionSound = nullptr;
-Mix_Chunk *gGameOverSound = nullptr;
+Mix_Chunk* gClickBlockSound = nullptr;
+Mix_Chunk* gColumnInsertionSound = nullptr;
+Mix_Chunk* gGameOverSound = nullptr;
 
 bool gBlocksSplashing = false;
 
@@ -77,11 +77,12 @@ std::vector<LBlock*> gRemovedBlocks;
 bool gPiecesAreFalling = false;
 bool gInsertingColumn = false;
 
-//TODO refactor this to game manager
+//TODO refactor this to the game manager
 bool gCurrentScreenStartScreen = true;
 bool gCurrentScreenGameover = false;
 bool gCurrentScreenGame = false;
 
+int gTimerClicks = START_TIMER_CLICKS;
 
 class Screen
 {
@@ -99,7 +100,9 @@ public:
 class StartScreen : public Screen
 {
 public:
-	StartScreen() : beingClicked(false) {}
+	StartScreen() : beingClicked(false)
+	{
+	}
 
 	void handleEvent(SDL_Event* e) override
 	{
@@ -114,22 +117,21 @@ public:
 			}
 			else if (beingClicked && e->type == SDL_MOUSEBUTTONUP)
 			{ // if block is clicked	
-			  // change screen to game loop
+				// change screen to game loop
 				gCurrentScreenStartScreen = false;
 				gCurrentScreenGame = true;
 				beingClicked = false;
-
 			}
-
 		}
 	}
 
-	void render() override {
+	void render() override
+	{
 		// background color
 		SDL_SetRenderDrawColor(gRenderer, 244, 173, 66, 0xFF);
 		SDL_RenderClear(gRenderer);
-		gOresLogo.render(SCREEN_WIDTH/2.0 - gOresLogo.getWidth()/2.0, SCREEN_HEIGHT/2.0 - gOresLogo.getHeight()/2.0, nullptr, 0);
-		gPlayButton.render(SCREEN_WIDTH / 2.0 - gPlayButton.getWidth() / 2.0, SCREEN_HEIGHT / 2.0 - gPlayButton.getHeight() / 2.0 + 2* gOresLogo.getHeight(), nullptr, 0);
+		gOresLogo.render(int(SCREEN_WIDTH / 2.0 - gOresLogo.getWidth() / 2.0), int(SCREEN_HEIGHT / 2.0 - gOresLogo.getHeight() / 2.0), nullptr, 0);
+		gPlayButton.render(int(SCREEN_WIDTH / 2.0 - gPlayButton.getWidth() / 2.0), int(SCREEN_HEIGHT / 2.0 - gPlayButton.getHeight() / 2.0 + 2 * gOresLogo.getHeight()), nullptr, 0);
 		SDL_RenderPresent(gRenderer);
 	}
 
@@ -141,7 +143,9 @@ private:
 class GameoverScreen : public Screen
 {
 public:
-	GameoverScreen() : beingClicked(false) {}
+	GameoverScreen() : beingClicked(false)
+	{
+	}
 
 	void handleEvent(SDL_Event* e) override
 	{
@@ -155,21 +159,21 @@ public:
 			}
 			else if (beingClicked && e->type == SDL_MOUSEBUTTONUP)
 			{ // if block is clicked	
-			  // change screen to game loop
+				// change screen to game loop
 				gCurrentScreenGameover = false;
 				gCurrentScreenGame = true;
 				beingClicked = false;
 			}
-
 		}
 	}
 
-	void render() override {
+	void render() override
+	{
 		// background color
-		SDL_SetRenderDrawColor(gRenderer, 100,100,100, 0xFF);
+		SDL_SetRenderDrawColor(gRenderer, 100, 100, 100, 0xFF);
 		SDL_RenderClear(gRenderer);
-		gGameOverLogo.render(SCREEN_WIDTH / 2.0 - gGameOverLogo.getWidth() / 2.0, SCREEN_HEIGHT / 2.0 - gGameOverLogo.getHeight() / 2.0, nullptr, 0);
-		gPlayAgainButton.render(SCREEN_WIDTH / 2.0 - gPlayAgainButton.getWidth() / 2.0, SCREEN_HEIGHT / 2.0 - gPlayAgainButton.getHeight() / 2.0 + 2 * gGameOverLogo.getHeight(), nullptr, 0);
+		gGameOverLogo.render(int(SCREEN_WIDTH / 2.0 - gGameOverLogo.getWidth() / 2.0), int(SCREEN_HEIGHT / 2.0 - gGameOverLogo.getHeight() / 2.0), nullptr, 0);
+		gPlayAgainButton.render(int(SCREEN_WIDTH / 2.0 - gPlayAgainButton.getWidth() / 2.0), int(SCREEN_HEIGHT / 2.0 - gPlayAgainButton.getHeight() / 2.0 + 2 * gGameOverLogo.getHeight()), nullptr, 0);
 		SDL_RenderPresent(gRenderer);
 	}
 
@@ -179,21 +183,6 @@ private:
 
 StartScreen starScreen;
 GameoverScreen gameoverScreen;
-
-void startScreenHandleEvent(SDL_Event* e)
-{
-
-	//TODO
-}
-void gameoverScreenHandleEvent(SDL_Event* e)
-{
-	//TODO
-}
-void renderGameOver()
-{
-	//TODO
-}
-
 
 // Converts
 PixelPoint MatrixToPixelPoint(MatrixPoint mp)
@@ -212,7 +201,7 @@ void drawBackground()
 	// rectangle under matrix
 	auto pp = MatrixToPixelPoint(MatrixPoint(0, 0));
 	pp.y += TEXTURE_SIDE + 10;
-	SDL_Rect rect = { pp.x, pp.y, MATRIX_WIDTH*TEXTURE_SIDE, 10 };
+	SDL_Rect rect = {pp.x, pp.y, MATRIX_WIDTH * TEXTURE_SIDE, 10};
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 125, 0x00, 0x00);
 	SDL_RenderFillRect(gRenderer, &rect);
 }
@@ -365,8 +354,9 @@ bool init()
 				{
 					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
 					success = false;
-				}else
-				{					
+				}
+				else
+				{
 					//Initialize SDL_mixer
 					if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
 					{
@@ -508,9 +498,9 @@ void close()
 
 void removedBlocksSplash(double dt)
 {
-	if(gRemovedBlocks.size() > 0)
+	if (gRemovedBlocks.size() > 0)
 	{
-		/* TODO
+		/* 
 		* calculate new x
 		* calculate new y
 		* calculate new angle
@@ -522,7 +512,8 @@ void removedBlocksSplash(double dt)
 		{
 			int x = blk->getPixelPoint().x + int(blk->velocityX * dt);
 			int y = blk->getPixelPoint().y + int(blk->velocityY * dt + 10 * dt * dt);
-			int a = blk->degrees + blk->angularVelocity * dt;
+
+			int a = int(blk->degrees + blk->angularVelocity * dt);
 			blk->setDegrees(a);
 			blk->setPixelPoint(PixelPoint(x, y));
 
@@ -534,10 +525,12 @@ void removedBlocksSplash(double dt)
 			{
 				outsideBlocks.push_back(blk);
 			}
-			if (y < 0) {
+			if (y < 0)
+			{
 				outsideBlocks.push_back(blk);
 			}
-			if (y > SCREEN_HEIGHT - 1) {
+			if (y > SCREEN_HEIGHT - 1)
+			{
 				outsideBlocks.push_back(blk);
 			}
 		}
@@ -560,16 +553,16 @@ void initRemovedBlocks()
 
 	for (auto blk : gRemovedBlocks)
 	{
-		/*TODO
+		/*
 		* get random x velocity (-XV,+XV)
 		* get random y velocity (-YV,+YV)
 		* get random w angular speed (-90,-45) U (45, 90), experimental values
 		* gravity "g" constance can be lower to give effect that deleted blocks are light weight
 		* angular acceleration is not applicable since there is no force making the blocks rotate faster
 		*/
-		blk->velocityX = fRand(-3, 3);
-		blk->velocityY = fRand(0, 10);
-		blk->angularVelocity = fRand(-15, 15);
+		blk->velocityX = int(fRand(-3, 3));
+		blk->velocityY = int(fRand(0, 10));
+		blk->angularVelocity = int(fRand(-15, 15));
 	}
 }
 
@@ -619,7 +612,7 @@ bool processFalling()
 						blocksSliding++;
 						block->sliding = true;
 						gMatrix[j][i] = nullptr;
-						gMatrix[rightest][i] = block;						
+						gMatrix[rightest][i] = block;
 						block->setMatrixPoint(MatrixPoint(i, rightest));
 					}
 				}
@@ -705,17 +698,13 @@ bool processFalling()
 
 		render();
 	}
-	
-	while(gRemovedBlocks.size() > 0)
+
+	while (gRemovedBlocks.size() > 0)
 	{
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
 		removedBlocksSplash(dt);
 		render();
 	}
-		
-	
-	// TODO remove because it becomes empty
-	gRemovedBlocks.clear();
 
 	return quit;
 }
@@ -726,16 +715,16 @@ void gameOver()
 	Mix_PlayChannel(-1, gGameOverSound, 0);
 	gCurrentScreenGame = false;
 	gCurrentScreenGameover = true;
-	// TO REMOVE
-	SDL_Delay(1000);
 }
 
 void initWorld()
 {
+	gTimerClicks = START_TIMER_CLICKS;
+
 	gPiecesAreFalling = false;
 	gInsertingColumn = false;
 
-	
+
 	gBlocksSplashing = false;
 
 
@@ -751,7 +740,7 @@ void initWorld()
 		for (int j = 0; j < MATRIX_WIDTH + 1; j++)
 			gMatrix[i][j] = nullptr;
 
-	
+
 	gInsertTimer = SDL_GetTicks();
 }
 
@@ -763,20 +752,22 @@ void render()
 	// render remaining time for insertion bar
 	if (!gInsertingColumn)
 	{
-		double w = (SDL_GetTicks() - gInsertTimer) / double(TIMER_CLICKS);
+		double w = (SDL_GetTicks() - gInsertTimer) / double(gTimerClicks);
 		if (w >= 1.0)
 		{
-			//TODO should i update it or leave it be?
+			//TODO should dt be from the start of the game of be since last update
 			gInsertTimer = SDL_GetTicks();
 			gInsertingColumn = true;
 			w = 1.0;
+			// increase difficulty by shortening timer
+			gTimerClicks = int(gTimerClicks * TIMER_DIFFICULTY_MULTIPLYER);
 		}
 		SDL_Rect rect = {TIMER_POS_X, TIMER_POS_Y, int(w * TIMER_WIDTH), TIMER_HEIGHT};
 		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x22, 0x00, 0xFF);
 		SDL_RenderFillRect(gRenderer, &rect);
 	}
 
-	
+
 	//Render blocks
 	for (LBlock* blk : gBlocks)
 	{
@@ -830,10 +821,10 @@ bool processColumnInsertion()
 
 			// make all blocks slide one block to the left and adjust the render and matrix positions
 			double dt = (SDL_GetTicks() - startTime) / 1000.0;
-			
+
 			for (LBlock* blk : gBlocks)
 			{
-				int x = blk->getPixelPoint().x - int(10*dt);
+				int x = blk->getPixelPoint().x - int(10 * dt);
 				int y = blk->getPixelPoint().y;
 				blk->setPixelPoint(PixelPoint(x, y));
 				int cx = blk->getPixelPoint().x;
@@ -844,7 +835,7 @@ bool processColumnInsertion()
 				}
 			}
 
-			for(int i=0; i < MATRIX_HEIGHT; i++)
+			for (int i = 0; i < MATRIX_HEIGHT; i++)
 			{
 				if (gMatrix[0][i] == nullptr)
 					break;
@@ -855,8 +846,18 @@ bool processColumnInsertion()
 		}
 		startTime = SDL_GetTicks();
 		initRemovedBlocks();
-		while (gRemovedBlocks.size() > 0)
+		while (gRemovedBlocks.size() > 0 && !quit)
 		{
+			while (SDL_PollEvent(&e) != 0)
+			{
+				//User requests quit
+				if (e.type == SDL_QUIT)
+				{
+					quit = true;
+					gameOver();
+					return quit;
+				}
+			}
 			double dt = (SDL_GetTicks() - startTime) / 1000.0;
 			removedBlocksSplash(dt);
 			render();
@@ -864,8 +865,8 @@ bool processColumnInsertion()
 
 
 		gameOver();
-		
-		quit = true;				
+
+		quit = true;
 		return quit;
 	}
 	// makes all columns shift to the left
@@ -901,8 +902,8 @@ bool processColumnInsertion()
 
 		for (LBlock* blk : gBlocks)
 		{
-			int x = blk->getPixelPoint().x- int(10 * dt + 5 * dt * dt);
-			int y = blk->getPixelPoint().y ;
+			int x = blk->getPixelPoint().x - int(10 * dt + 5 * dt * dt);
+			int y = blk->getPixelPoint().y;
 			blk->setPixelPoint(PixelPoint(x, y));
 			auto pp = MatrixToPixelPoint(blk->getMatrixPoint());
 			int xTarget = pp.x;
@@ -950,21 +951,19 @@ void gameLoop()
 			}
 		}
 
-		
 
 		render();
 
 		if (gPiecesAreFalling)
 		{
-			Mix_PlayChannel(-1, gColumnInsertionSound, 0);
+			Mix_PlayChannel(-1, gClickBlockSound, 0);
 			quit = processFalling();
 			gPiecesAreFalling = false;
 		}
 
 		if (gInsertingColumn)
-		{			
-			
-			quit = processColumnInsertion();		
+		{
+			quit = processColumnInsertion();
 			gInsertingColumn = false;
 		}
 	}
@@ -1004,41 +1003,38 @@ int main(int argc, char* args[])
 					{
 						quit = true;
 					}
-					
-					if(gCurrentScreenStartScreen)
+
+					if (gCurrentScreenStartScreen)
 					{
 						starScreen.handleEvent(&e);
-					}else //game over
-					{
-						gameoverScreen.handleEvent(&e);						
 					}
-					
+					else //game over
+					{
+						gameoverScreen.handleEvent(&e);
+					}
 				}
-				
-				if(gCurrentScreenStartScreen)
+
+				if (gCurrentScreenStartScreen)
 				{
 					starScreen.render();
 				}
 				else if (gCurrentScreenGame)
 				{
 					gameLoop();
-
-				}else if(gCurrentScreenGameover)
+				}
+				else if (gCurrentScreenGameover)
 				{
-					
 					gameoverScreen.render();
-				}else // default case, hope it doesnt happen
+				}
+				else // default case, hope it doesnt happen
 				{
 					std::cout << "Invalid game state, defaulting to start screen";
 					starScreen.render();
-					
 				}
 			}
-
-			
 		}
 	}
-	
+
 	//Free resources and close SDL
 	close();
 

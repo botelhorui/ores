@@ -18,7 +18,7 @@
  */
 void generateWorldfgfg()
 {
-	for(int j = 0; j < MATRIX_WIDTH; j++)
+	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
 		addBlock(&gBlueSquare, MatrixPoint(0, j));
 	}
@@ -29,10 +29,9 @@ void generateWorldfgfg()
  */
 void generateWorldadas()
 {
-	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH-1));
+	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
 	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
-	
 }
 
 /**
@@ -75,15 +74,14 @@ void generateWorldasd()
 */
 void generateWorldfghfgh()
 {
-	
-	for (int j = 0; j < MATRIX_WIDTH-2; j++)
+	for (int j = 0; j < MATRIX_WIDTH - 2; j++)
 	{
 		for (int i = 0; i < MATRIX_HEIGHT; i++)
 		{
-			if (j == MATRIX_WIDTH - 3 && i==0)
+			if (j == MATRIX_WIDTH - 3 && i == 0)
 				i = 1;
 			addBlock(&gBlueSquare, MatrixPoint(i, j));
-		}		
+		}
 	}
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
@@ -100,12 +98,12 @@ void generateWorldfghfgh()
  */
 void generateWorldccc()
 {
-	for(int i=0; i < MATRIX_HEIGHT -1; i++)
+	for (int i = 0; i < MATRIX_HEIGHT - 1; i++)
 	{
 		addBlock(&gGreenSquare, MatrixPoint(i, MATRIX_WIDTH - 1));
 	}
 
-	addBlock(&gGreySquare, MatrixPoint(MATRIX_HEIGHT-1, MATRIX_WIDTH - 1));
+	addBlock(&gGreySquare, MatrixPoint(MATRIX_HEIGHT - 1, MATRIX_WIDTH - 1));
 }
 
 /**
@@ -133,20 +131,19 @@ void generateWorldasdfsd()
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  */
-void generateWorld()
+void generateWorldfhfhf()
 {
-	for(int i=0; i < MATRIX_HEIGHT-1; i++)
+	for (int i = 0; i < MATRIX_HEIGHT - 1; i++)
 	{
-		for(int j=0; j < MATRIX_WIDTH; j++)
+		for (int j = 0; j < MATRIX_WIDTH; j++)
 		{
 			addBlock(&gRedSquare, MatrixPoint(i, j));
 		}
 	}
-	for(int j=0; j < MATRIX_WIDTH; j++)
+	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gGreenSquare, MatrixPoint(MATRIX_HEIGHT-1, j));
+		addBlock(&gGreenSquare, MatrixPoint(MATRIX_HEIGHT - 1, j));
 	}
-
 }
 
 /**
@@ -155,7 +152,6 @@ void generateWorld()
  */
 void generateWorldada()
 {
-
 	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
 		addBlock(&gRedSquare, MatrixPoint(0, j));
@@ -164,7 +160,6 @@ void generateWorldada()
 	{
 		addBlock(&gGreenSquare, MatrixPoint(1, j));
 	}
-
 }
 
 /*
@@ -179,10 +174,9 @@ void generateWorldasdasd()
 {
 	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
 	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 1));
-	for(int i=2; i < MATRIX_HEIGHT; i++)
+	for (int i = 2; i < MATRIX_HEIGHT; i++)
 	{
-		addBlock(&gRedSquare, MatrixPoint(i, MATRIX_WIDTH-1));
-
+		addBlock(&gRedSquare, MatrixPoint(i, MATRIX_WIDTH - 1));
 	}
 }
 
@@ -199,11 +193,10 @@ void generateWorld6696()
 	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 3));
 	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
 	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
-	
 }
 
 // Generate a random rectangle of blocks starting at the game first column
-void generateWorldadsad()
+void generateWorld()
 {
 	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++)
 	{
@@ -213,4 +206,3 @@ void generateWorldadsad()
 		}
 	}
 }
-

@@ -111,6 +111,7 @@ Uint32 LBlock::getAlpha() const
 {
 	return alpha;
 }
+
 void LBlock::render() const
 {
 	if (removed)

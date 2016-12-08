@@ -28,15 +28,12 @@ const int HIGHLIGHT_BORDER_WIDTH = 3;
 const int TEXTURE_SIDE = 32;
 
 // Ammount of seconds between right column insertion
-const int TIMER_CLICKS = 1;
+const int START_TIMER_CLICKS = 10000;
+
+const double TIMER_DIFFICULTY_MULTIPLYER = 0.9;
 
 // Geometric properties of the timer
 const int TIMER_POS_X = 40;
 const int TIMER_POS_Y = 10;
 const int TIMER_HEIGHT = 25;
 const int TIMER_WIDTH = 100;
-
-
-
-
-

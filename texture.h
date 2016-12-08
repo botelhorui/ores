@@ -27,7 +27,7 @@ public:
 
 	//Set alpha modulation
 	void setAlpha(Uint8 alpha) const;
-	
+
 	//Renders texture at given point
 	void render(int x, int y, SDL_Rect* clip = nullptr, double angle = 0.0, SDL_Point* center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE) const;
 

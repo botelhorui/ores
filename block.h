@@ -32,14 +32,14 @@ public:
 
 	// Gets the associated texture
 	LTexture* getTexture() const;
-	
+
 	// Set the rotation of the block, used when the blocks are collected and fall to the ground
 	void setDegrees(int a);
 
 	PixelPoint getPixelPoint() const;
 
 	MatrixPoint getMatrixPoint() const;
-	
+
 
 	void setPixelPoint(PixelPoint pp);
 
@@ -64,7 +64,7 @@ public:
 	int degrees;
 
 	// true when doing depth first search and had already been tested if the texture matches with adjacent block
-	bool searched; 
+	bool searched;
 
 	// True when the block is falling after some of the blocks below were matched
 	bool falling;
