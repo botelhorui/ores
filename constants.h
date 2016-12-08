@@ -28,7 +28,7 @@ const int HIGHLIGHT_BORDER_WIDTH = 3;
 const int TEXTURE_SIDE = 32;
 
 // Ammount of seconds between right column insertion
-const int TIMER_CLICKS = 5000;
+const int TIMER_CLICKS = 1;
 
 // Geometric properties of the timer
 const int TIMER_POS_X = 40;

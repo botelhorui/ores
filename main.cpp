@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "block.h"
 #include "texture.h"
+#include <iostream>
 
 
 //Starts up SDL and creates window
@@ -30,11 +31,11 @@ SDL_Window* gWindow = nullptr;
 SDL_Renderer* gRenderer = nullptr;
 
 //The sound effects that will be used
-Mix_Chunk *gClickBlock = nullptr;
-Mix_Chunk *gColumnInsertion = nullptr;
-Mix_Chunk *gGameOver = nullptr;
+Mix_Chunk *gClickBlockSound = nullptr;
+Mix_Chunk *gColumnInsertionSound = nullptr;
+Mix_Chunk *gGameOverSound = nullptr;
 
-bool blocksSplashing = false;
+bool gBlocksSplashing = false;
 
 //Scene texture
 LTexture gRedSquare;
@@ -43,11 +44,17 @@ LTexture gGreenSquare;
 LTexture gBlueSquare;
 LTexture gYellowSquare;
 
+// Buttons and text
+LTexture gOresLogo;
+LTexture gPlayButton;
+LTexture gGameOverLogo;
+LTexture gPlayAgainButton;
+
 // All the textures
-std::vector<LTexture*> textures;
+std::vector<LTexture*> gTextures;
 
 /* Time of the start of the timer for the insertion of new columns*/
-int insertTimer;
+int gInsertTimer;
 
 /** Matrix of game blocks
  *
@@ -59,20 +66,133 @@ int insertTimer;
  *	
  *	An extra column is used to insert the new column at the right of the matrix
  */
-LBlock* matrix[MATRIX_WIDTH + 1][MATRIX_HEIGHT];
+//TODO put this in the game manager ffs
+LBlock* gMatrix[MATRIX_WIDTH + 1][MATRIX_HEIGHT];
 
 // All the blocks of the game
-std::vector<LBlock*> blocks;
+std::vector<LBlock*> gBlocks;
 
 // All the blocks that have been matched and are to be removed from blocks and matrix
-std::vector<LBlock*> removedBlocks;
+std::vector<LBlock*> gRemovedBlocks;
+bool gPiecesAreFalling = false;
+bool gInsertingColumn = false;
+
+//TODO refactor this to game manager
+bool gCurrentScreenStartScreen = true;
+bool gCurrentScreenGameover = false;
+bool gCurrentScreenGame = false;
 
 
-bool piecesAreFalling = false;
-bool insertingColumn = false;
+class Screen
+{
+public:
+	virtual ~Screen()
+	{
+	}
+
+	virtual void handleEvent(SDL_Event* e) = 0;
+	virtual void render() = 0;
+};
 
 
+// TODO refactor this to own header and cpp
+class StartScreen : public Screen
+{
+public:
+	StartScreen() : beingClicked(false) {}
 
+	void handleEvent(SDL_Event* e) override
+	{
+		if (!gCurrentScreenStartScreen)
+			return;
+
+		if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
+		{
+			if (e->type == SDL_MOUSEBUTTONDOWN)
+			{
+				beingClicked = true;
+			}
+			else if (beingClicked && e->type == SDL_MOUSEBUTTONUP)
+			{ // if block is clicked	
+			  // change screen to game loop
+				gCurrentScreenStartScreen = false;
+				gCurrentScreenGame = true;
+				beingClicked = false;
+
+			}
+
+		}
+	}
+
+	void render() override {
+		// background color
+		SDL_SetRenderDrawColor(gRenderer, 244, 173, 66, 0xFF);
+		SDL_RenderClear(gRenderer);
+		gOresLogo.render(SCREEN_WIDTH/2.0 - gOresLogo.getWidth()/2.0, SCREEN_HEIGHT/2.0 - gOresLogo.getHeight()/2.0, nullptr, 0);
+		gPlayButton.render(SCREEN_WIDTH / 2.0 - gPlayButton.getWidth() / 2.0, SCREEN_HEIGHT / 2.0 - gPlayButton.getHeight() / 2.0 + 2* gOresLogo.getHeight(), nullptr, 0);
+		SDL_RenderPresent(gRenderer);
+	}
+
+private:
+	bool beingClicked;
+};
+
+// TODO refactor this to own header and cpp
+class GameoverScreen : public Screen
+{
+public:
+	GameoverScreen() : beingClicked(false) {}
+
+	void handleEvent(SDL_Event* e) override
+	{
+		if (!gCurrentScreenGameover)
+			return;
+		if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
+		{
+			if (e->type == SDL_MOUSEBUTTONDOWN)
+			{
+				beingClicked = true;
+			}
+			else if (beingClicked && e->type == SDL_MOUSEBUTTONUP)
+			{ // if block is clicked	
+			  // change screen to game loop
+				gCurrentScreenGameover = false;
+				gCurrentScreenGame = true;
+				beingClicked = false;
+			}
+
+		}
+	}
+
+	void render() override {
+		// background color
+		SDL_SetRenderDrawColor(gRenderer, 100,100,100, 0xFF);
+		SDL_RenderClear(gRenderer);
+		gGameOverLogo.render(SCREEN_WIDTH / 2.0 - gGameOverLogo.getWidth() / 2.0, SCREEN_HEIGHT / 2.0 - gGameOverLogo.getHeight() / 2.0, nullptr, 0);
+		gPlayAgainButton.render(SCREEN_WIDTH / 2.0 - gPlayAgainButton.getWidth() / 2.0, SCREEN_HEIGHT / 2.0 - gPlayAgainButton.getHeight() / 2.0 + 2 * gGameOverLogo.getHeight(), nullptr, 0);
+		SDL_RenderPresent(gRenderer);
+	}
+
+private:
+	bool beingClicked;
+};
+
+StartScreen starScreen;
+GameoverScreen gameoverScreen;
+
+void startScreenHandleEvent(SDL_Event* e)
+{
+
+	//TODO
+}
+void gameoverScreenHandleEvent(SDL_Event* e)
+{
+	//TODO
+}
+void renderGameOver()
+{
+	//TODO
+}
 
 
 // Converts
@@ -103,9 +223,9 @@ LTexture* randomTexture()
 	// http://stackoverflow.com/questions/5008804/generating-random-integer-from-a-range
 	std::random_device rd;
 	std::mt19937 rng(rd());
-	std::uniform_int_distribution<int> uni(0, textures.size() - 1);
+	std::uniform_int_distribution<int> uni(0, gTextures.size() - 1);
 	int randomTexture = uni(rng);
-	return textures[randomTexture];
+	return gTextures[randomTexture];
 }
 
 /* Add a block to the matrix and list of blocks with a given texture at coordinage (j,i) */
@@ -118,8 +238,8 @@ void addBlock(LTexture* tex, MatrixPoint p)
 	blk->setMatrixPoint(p);
 	//blk->setPixelPos(ColumnMatrixToPixel(j), LineMatrixToPixel(i));
 	blk->setPixelPoint(MatrixToPixelPoint(p));
-	matrix[p.j][p.i] = blk;
-	blocks.push_back(blk);
+	gMatrix[p.j][p.i] = blk;
+	gBlocks.push_back(blk);
 }
 
 void searchMathingBlocks(LBlock* block);
@@ -128,7 +248,7 @@ void searchMathingBlocks(LBlock* block);
 void handleBlockClick(LBlock* block)
 {
 	// clean blocks searched flag
-	for (auto b : blocks)
+	for (auto b : gBlocks)
 		b->searched = false;
 	searchMathingBlocks(block);
 }
@@ -139,7 +259,7 @@ void markFalling(LBlock* block)
 {
 	for (int i = block->getMatrixPoint().i; i < MATRIX_HEIGHT; i++)
 	{
-		LBlock* el = matrix[block->getMatrixPoint().j][i];
+		LBlock* el = gMatrix[block->getMatrixPoint().j][i];
 		if (el != nullptr)
 		{
 			el->falling = true;
@@ -153,16 +273,16 @@ void sweep(LBlock* block, LBlock* other)
 	if (other != nullptr && block->getTexture() == other->getTexture())
 	{
 		// add to the removed blocks if not contained
-		if (std::find(removedBlocks.begin(), removedBlocks.end(), block) == removedBlocks.end())
-			removedBlocks.push_back(block);
+		if (std::find(gRemovedBlocks.begin(), gRemovedBlocks.end(), block) == gRemovedBlocks.end())
+			gRemovedBlocks.push_back(block);
 		markFalling(block);
 		// add to the removed blocks if not contained
-		if (std::find(removedBlocks.begin(), removedBlocks.end(), other) == removedBlocks.end())
-			removedBlocks.push_back(other);
+		if (std::find(gRemovedBlocks.begin(), gRemovedBlocks.end(), other) == gRemovedBlocks.end())
+			gRemovedBlocks.push_back(other);
 		markFalling(other);
 		searchMathingBlocks(other);
 		//
-		piecesAreFalling = true;
+		gPiecesAreFalling = true;
 	}
 }
 
@@ -175,25 +295,25 @@ void searchMathingBlocks(LBlock* block)
 	// handle the top block
 	if (block->getMatrixPoint().i < MATRIX_HEIGHT - 1)
 	{
-		LBlock* top = matrix[block->getMatrixPoint().j][block->getMatrixPoint().i + 1];
+		LBlock* top = gMatrix[block->getMatrixPoint().j][block->getMatrixPoint().i + 1];
 		sweep(block, top);
 	}
 	// handle the bottom block
 	if (block->getMatrixPoint().i > 0)
 	{
-		LBlock* bot = matrix[block->getMatrixPoint().j][block->getMatrixPoint().i - 1];
+		LBlock* bot = gMatrix[block->getMatrixPoint().j][block->getMatrixPoint().i - 1];
 		sweep(block, bot);
 	}
 	// handle right block
 	if (block->getMatrixPoint().j < MATRIX_WIDTH - 1)
 	{
-		LBlock* right = matrix[block->getMatrixPoint().j + 1][block->getMatrixPoint().i];
+		LBlock* right = gMatrix[block->getMatrixPoint().j + 1][block->getMatrixPoint().i];
 		sweep(block, right);
 	}
 	// handle left block
 	if (block->getMatrixPoint().j > 0)
 	{
-		LBlock* left = matrix[block->getMatrixPoint().j - 1][block->getMatrixPoint().i];
+		LBlock* left = gMatrix[block->getMatrixPoint().j - 1][block->getMatrixPoint().i];
 		sweep(block, left);
 	}
 }
@@ -273,49 +393,73 @@ bool loadMedia()
 		printf("Failed to load red square texture!\n");
 		success = false;
 	}
-	textures.push_back(&gRedSquare);
+	gTextures.push_back(&gRedSquare);
 	if (!gGreySquare.loadFromFile(basePath + "grey.square.bmp"))
 	{
 		printf("Failed to load grey square texture!\n");
 		success = false;
 	}
-	textures.push_back(&gGreySquare);
+	gTextures.push_back(&gGreySquare);
 	if (!gGreenSquare.loadFromFile(basePath + "green.square.bmp"))
 	{
 		printf("Failed to load green square texture!\n");
 		success = false;
 	}
-	textures.push_back(&gGreenSquare);
+	gTextures.push_back(&gGreenSquare);
 	if (!gBlueSquare.loadFromFile(basePath + "blue.square.bmp"))
 	{
 		printf("Failed to load blue square texture!\n");
 		success = false;
 	}
-	textures.push_back(&gBlueSquare);
+	gTextures.push_back(&gBlueSquare);
 	if (!gYellowSquare.loadFromFile(basePath + "yellow.square.bmp"))
 	{
 		printf("Failed to load yellow square texture!\n");
 		success = false;
 	}
-	textures.push_back(&gYellowSquare);
+	gTextures.push_back(&gYellowSquare);
+
+	// Load Text and buttons
+	if (!gOresLogo.loadFromFile(basePath + "ores.logo.bmp"))
+	{
+		printf("Failed to load ores logo texture!\n");
+		success = false;
+	}
+
+	if (!gPlayButton.loadFromFile(basePath + "play.button.bmp"))
+	{
+		printf("Failed to load play button texture!\n");
+		success = false;
+	}
+
+	if (!gGameOverLogo.loadFromFile(basePath + "gameover.bmp"))
+	{
+		printf("Failed to load gameover texture!\n");
+		success = false;
+	}
+	if (!gPlayAgainButton.loadFromFile(basePath + "play.again.button.bmp"))
+	{
+		printf("Failed to load play again texture!\n");
+		success = false;
+	}
 
 	//Load sound effects
-	gClickBlock = Mix_LoadWAV("../resources/metal.click.wav");
-	if (gClickBlock == nullptr)
+	gClickBlockSound = Mix_LoadWAV("../resources/metal.click.wav");
+	if (gClickBlockSound == nullptr)
 	{
 		printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
 		success = false;
 	}
 	//Load sound effects
-	gColumnInsertion = Mix_LoadWAV("../resources/slidding.wav");
-	if (gColumnInsertion == nullptr)
+	gColumnInsertionSound = Mix_LoadWAV("../resources/slidding.wav");
+	if (gColumnInsertionSound == nullptr)
 	{
 		printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
 		success = false;
 	}
 	//Load sound effects
-	gGameOver = Mix_LoadWAV("../resources/gameover.wav");
-	if (gGameOver == nullptr)
+	gGameOverSound = Mix_LoadWAV("../resources/gameover.wav");
+	if (gGameOverSound == nullptr)
 	{
 		printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
 		success = false;
@@ -328,26 +472,26 @@ bool loadMedia()
 void close()
 {
 	//Free loaded textures
-	for (LTexture* tex : textures)
+	for (LTexture* tex : gTextures)
 		tex->free();
 
-	textures.clear();
+	gTextures.clear();
 
-	for (LBlock* blk : blocks)
+	for (LBlock* blk : gBlocks)
 		delete blk;
-	blocks.clear();
+	gBlocks.clear();
 
-	for (LBlock* blk : removedBlocks)
+	for (LBlock* blk : gRemovedBlocks)
 		delete blk;
-	removedBlocks.clear();
+	gRemovedBlocks.clear();
 
 	//Free the sound effects
-	Mix_FreeChunk(gClickBlock);
-	Mix_FreeChunk(gGameOver);
-	Mix_FreeChunk(gColumnInsertion);
-	gClickBlock = nullptr;
-	gGameOver = nullptr;
-	gColumnInsertion = nullptr;
+	Mix_FreeChunk(gClickBlockSound);
+	Mix_FreeChunk(gGameOverSound);
+	Mix_FreeChunk(gColumnInsertionSound);
+	gClickBlockSound = nullptr;
+	gGameOverSound = nullptr;
+	gColumnInsertionSound = nullptr;
 
 	//Destroy window	
 	SDL_DestroyRenderer(gRenderer);
@@ -364,7 +508,7 @@ void close()
 
 void removedBlocksSplash(double dt)
 {
-	if(removedBlocks.size() > 0)
+	if(gRemovedBlocks.size() > 0)
 	{
 		/* TODO
 		* calculate new x
@@ -374,7 +518,7 @@ void removedBlocksSplash(double dt)
 		* call delete on the block to free memory
 		*/
 		std::vector<LBlock*> outsideBlocks;
-		for (auto blk : removedBlocks)
+		for (auto blk : gRemovedBlocks)
 		{
 			int x = blk->getPixelPoint().x + int(blk->velocityX * dt);
 			int y = blk->getPixelPoint().y + int(blk->velocityY * dt + 10 * dt * dt);
@@ -399,22 +543,22 @@ void removedBlocksSplash(double dt)
 		}
 
 		for (auto oblk : outsideBlocks)
-			removedBlocks.erase(std::remove(removedBlocks.begin(), removedBlocks.end(), oblk), removedBlocks.end());
+			gRemovedBlocks.erase(std::remove(gRemovedBlocks.begin(), gRemovedBlocks.end(), oblk), gRemovedBlocks.end());
 	}
 }
 
 void initRemovedBlocks()
 {
 	// remove matched blocks from the vector of blocks
-	for (LBlock* blk : removedBlocks)
+	for (LBlock* blk : gRemovedBlocks)
 	{
 		//mTex->setAlpha(255);
-		matrix[blk->getMatrixPoint().j][blk->getMatrixPoint().i] = nullptr;
-		blocks.erase(std::remove(blocks.begin(), blocks.end(), blk), blocks.end());
+		gMatrix[blk->getMatrixPoint().j][blk->getMatrixPoint().i] = nullptr;
+		gBlocks.erase(std::remove(gBlocks.begin(), gBlocks.end(), blk), gBlocks.end());
 	}
 
 
-	for (auto blk : removedBlocks)
+	for (auto blk : gRemovedBlocks)
 	{
 		/*TODO
 		* get random x velocity (-XV,+XV)
@@ -440,11 +584,11 @@ bool processFalling()
 		int lowest = 0;
 		for (int i = 0; i < MATRIX_HEIGHT; i++)
 		{
-			if (matrix[j][i] != nullptr)
+			if (gMatrix[j][i] != nullptr)
 			{
-				LBlock* block = matrix[j][i];
-				matrix[j][i] = nullptr;
-				matrix[j][lowest] = block;
+				LBlock* block = gMatrix[j][i];
+				gMatrix[j][i] = nullptr;
+				gMatrix[j][lowest] = block;
 				//block->setMatrixPos(j, lowest);				
 				block->setMatrixPoint(MatrixPoint(lowest, j));
 				if (lowest != i)
@@ -463,19 +607,19 @@ bool processFalling()
 	// Calculate the new matrix coordinates of each slidding block to the right
 	for (int j = rightest; j >= 0; j--)
 	{
-		if (matrix[j][0] != nullptr)
+		if (gMatrix[j][0] != nullptr)
 		{
 			if (j != rightest)
 			{ // means j has empty collumn to the right				
 				for (int i = 0; i < MATRIX_HEIGHT; i++)
 				{
-					if (matrix[j][i] != nullptr)
+					if (gMatrix[j][i] != nullptr)
 					{
-						LBlock* block = matrix[j][i];
+						LBlock* block = gMatrix[j][i];
 						blocksSliding++;
 						block->sliding = true;
-						matrix[j][i] = nullptr;
-						matrix[rightest][i] = block;						
+						gMatrix[j][i] = nullptr;
+						gMatrix[rightest][i] = block;						
 						block->setMatrixPoint(MatrixPoint(i, rightest));
 					}
 				}
@@ -505,7 +649,7 @@ bool processFalling()
 		removedBlocksSplash(dt);
 
 		// Fall blocks by moving blocks down step by step
-		for (LBlock* blk : blocks)
+		for (LBlock* blk : gBlocks)
 		{
 			if (blk->falling)
 			{
@@ -541,7 +685,7 @@ bool processFalling()
 		removedBlocksSplash(dt);
 
 		// Slide blocks by moving blocks rightway step by step
-		for (LBlock* blk : blocks)
+		for (LBlock* blk : gBlocks)
 		{
 			if (blk->sliding)
 			{
@@ -562,7 +706,7 @@ bool processFalling()
 		render();
 	}
 	
-	while(removedBlocks.size() > 0)
+	while(gRemovedBlocks.size() > 0)
 	{
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
 		removedBlocksSplash(dt);
@@ -571,7 +715,7 @@ bool processFalling()
 		
 	
 	// TODO remove because it becomes empty
-	removedBlocks.clear();
+	gRemovedBlocks.clear();
 
 	return quit;
 }
@@ -579,21 +723,36 @@ bool processFalling()
 
 void gameOver()
 {
-	Mix_PlayChannel(-1, gGameOver, 0);
-	SDL_Delay(6000);
+	Mix_PlayChannel(-1, gGameOverSound, 0);
+	gCurrentScreenGame = false;
+	gCurrentScreenGameover = true;
+	// TO REMOVE
+	SDL_Delay(1000);
 }
-
-
-
 
 void initWorld()
 {
-	for (int i = 0; i < MATRIX_HEIGHT; i++)
-		for (int j = 0; j < MATRIX_WIDTH + 1; j++)
-			matrix[i][j] = nullptr;
+	gPiecesAreFalling = false;
+	gInsertingColumn = false;
 
 	
-	insertTimer = SDL_GetTicks();
+	gBlocksSplashing = false;
+
+
+	for (LBlock* blk : gBlocks)
+		delete blk;
+	gBlocks.clear();
+
+	for (LBlock* blk : gRemovedBlocks)
+		delete blk;
+	gRemovedBlocks.clear();
+
+	for (int i = 0; i < MATRIX_HEIGHT; i++)
+		for (int j = 0; j < MATRIX_WIDTH + 1; j++)
+			gMatrix[i][j] = nullptr;
+
+	
+	gInsertTimer = SDL_GetTicks();
 }
 
 
@@ -602,13 +761,14 @@ void render()
 	drawBackground();
 
 	// render remaining time for insertion bar
-	if (!insertingColumn)
+	if (!gInsertingColumn)
 	{
-		double w = (SDL_GetTicks() - insertTimer) / double(TIMER_CLICKS);
+		double w = (SDL_GetTicks() - gInsertTimer) / double(TIMER_CLICKS);
 		if (w >= 1.0)
 		{
-			insertTimer = SDL_GetTicks();
-			insertingColumn = true;
+			//TODO should i update it or leave it be?
+			gInsertTimer = SDL_GetTicks();
+			gInsertingColumn = true;
 			w = 1.0;
 		}
 		SDL_Rect rect = {TIMER_POS_X, TIMER_POS_Y, int(w * TIMER_WIDTH), TIMER_HEIGHT};
@@ -618,13 +778,13 @@ void render()
 
 	
 	//Render blocks
-	for (LBlock* blk : blocks)
+	for (LBlock* blk : gBlocks)
 	{
 		blk->render();
 	}
 
 	//Render splash blocks
-	for (auto blk : removedBlocks)
+	for (auto blk : gRemovedBlocks)
 	{
 		blk->setAlpha(230);
 		blk->render();
@@ -636,7 +796,7 @@ void render()
 
 bool processColumnInsertion()
 {
-	Mix_PlayChannel(-1, gColumnInsertion, 0);
+	Mix_PlayChannel(-1, gColumnInsertionSound, 0);
 	SDL_Event e;
 	int startTime = SDL_GetTicks();
 	bool finished = false;
@@ -649,12 +809,12 @@ bool processColumnInsertion()
 		addBlock(randomTexture(), MatrixPoint(i, MATRIX_WIDTH));
 	}
 
-	if (matrix[0][0] != nullptr)
+	if (gMatrix[0][0] != nullptr)
 	{ //if the first column is not NULL then the game is over
 		finished = false;
 		quit = false;
 
-		int xTarget = matrix[0][0]->getPixelPoint().x - TEXTURE_SIDE;
+		int xTarget = gMatrix[0][0]->getPixelPoint().x - TEXTURE_SIDE;
 
 		while (!finished && !quit)
 		{
@@ -671,7 +831,7 @@ bool processColumnInsertion()
 			// make all blocks slide one block to the left and adjust the render and matrix positions
 			double dt = (SDL_GetTicks() - startTime) / 1000.0;
 			
-			for (LBlock* blk : blocks)
+			for (LBlock* blk : gBlocks)
 			{
 				int x = blk->getPixelPoint().x - int(10*dt);
 				int y = blk->getPixelPoint().y;
@@ -686,16 +846,16 @@ bool processColumnInsertion()
 
 			for(int i=0; i < MATRIX_HEIGHT; i++)
 			{
-				if (matrix[0][i] == nullptr)
+				if (gMatrix[0][i] == nullptr)
 					break;
-				removedBlocks.push_back(matrix[0][i]);
+				gRemovedBlocks.push_back(gMatrix[0][i]);
 			}
 
 			render();
 		}
 		startTime = SDL_GetTicks();
 		initRemovedBlocks();
-		while (removedBlocks.size() > 0)
+		while (gRemovedBlocks.size() > 0)
 		{
 			double dt = (SDL_GetTicks() - startTime) / 1000.0;
 			removedBlocksSplash(dt);
@@ -713,13 +873,13 @@ bool processColumnInsertion()
 	{
 		for (int i = 0; i < MATRIX_HEIGHT; i++)
 		{
-			LBlock* blk = matrix[j][i];
+			LBlock* blk = gMatrix[j][i];
 			if (blk == nullptr)
 				continue;
-			matrix[j - 1][i] = blk;
+			gMatrix[j - 1][i] = blk;
 			//int newj = blk->getMatrixPoint().j - 1;
-			matrix[j][i]->setMatrixPoint(MatrixPoint(i, j - 1));
-			matrix[j][i] = nullptr;
+			gMatrix[j][i]->setMatrixPoint(MatrixPoint(i, j - 1));
+			gMatrix[j][i] = nullptr;
 		}
 	}
 
@@ -739,7 +899,7 @@ bool processColumnInsertion()
 		// make all blocks slide one block to the left and adjust the render and matrix positions
 		double dt = (SDL_GetTicks() - startTime) / 1000.0;
 
-		for (LBlock* blk : blocks)
+		for (LBlock* blk : gBlocks)
 		{
 			int x = blk->getPixelPoint().x- int(10 * dt + 5 * dt * dt);
 			int y = blk->getPixelPoint().y ;
@@ -784,7 +944,7 @@ void gameLoop()
 			}
 
 			// handle mouse highlight and clicks on each block
-			for (LBlock* blk : blocks)
+			for (LBlock* blk : gBlocks)
 			{
 				blk->handleEvent(&e);
 			}
@@ -794,21 +954,22 @@ void gameLoop()
 
 		render();
 
-		if (piecesAreFalling)
+		if (gPiecesAreFalling)
 		{
-			Mix_PlayChannel(-1, gColumnInsertion, 0);
+			Mix_PlayChannel(-1, gColumnInsertionSound, 0);
 			quit = processFalling();
-			piecesAreFalling = false;
+			gPiecesAreFalling = false;
 		}
 
-		if (insertingColumn)
+		if (gInsertingColumn)
 		{			
 			
 			quit = processColumnInsertion();		
-			insertingColumn = false;
+			gInsertingColumn = false;
 		}
 	}
 }
+
 
 int main(int argc, char* args[])
 {
@@ -827,7 +988,54 @@ int main(int argc, char* args[])
 		}
 		else
 		{
-			gameLoop();
+			SDL_Event e;
+			bool quit = false;
+			gCurrentScreenStartScreen = true;
+			gCurrentScreenGameover = false;
+			gCurrentScreenGame = false;
+			//While application is running
+			while (!quit)
+			{
+				//Handle events on queue
+				while (SDL_PollEvent(&e) != 0)
+				{
+					//User requests quit
+					if (e.type == SDL_QUIT)
+					{
+						quit = true;
+					}
+					
+					if(gCurrentScreenStartScreen)
+					{
+						starScreen.handleEvent(&e);
+					}else //game over
+					{
+						gameoverScreen.handleEvent(&e);						
+					}
+					
+				}
+				
+				if(gCurrentScreenStartScreen)
+				{
+					starScreen.render();
+				}
+				else if (gCurrentScreenGame)
+				{
+					gameLoop();
+
+				}else if(gCurrentScreenGameover)
+				{
+					
+					gameoverScreen.render();
+				}else // default case, hope it doesnt happen
+				{
+					std::cout << "Invalid game state, defaulting to start screen";
+					starScreen.render();
+					
+				}
+			}
+
+			
 		}
 	}
 	
