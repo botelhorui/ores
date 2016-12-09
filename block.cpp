@@ -1,8 +1,6 @@
 #include "constants.h"
 #include "block.h"
-
-
-void handleBlockClick(LBlock* block);
+#include "gamemanager.h"
 
 void LBlock::setTexture(LTexture* tex)
 {
@@ -57,7 +55,7 @@ void LBlock::handleEvent(SDL_Event* e)
 			}
 			else if (blockBeingClicked && e->type == SDL_MOUSEBUTTONUP)
 			{ // if block is clicked				
-				handleBlockClick(this);
+				gameManager.handleBlockClick(this);
 				blockBeingClicked = false;
 			}
 		}
@@ -111,18 +109,18 @@ void LBlock::render() const
 	// render hightlight
 	if (cursorHovering)
 	{
-		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+		SDL_SetRenderDrawColor(gameManager.gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 		// Left side rectangle
 		SDL_Rect fillRect = {pixelPoint.x, pixelPoint.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight()};
-		SDL_RenderFillRect(gRenderer, &fillRect);
+		SDL_RenderFillRect(gameManager.gRenderer, &fillRect);
 		// Right side rectangle
 		fillRect = {pixelPoint.x + mTex->getWidth() - HIGHLIGHT_BORDER_WIDTH , pixelPoint.y, HIGHLIGHT_BORDER_WIDTH, mTex->getHeight()};
-		SDL_RenderFillRect(gRenderer, &fillRect);
+		SDL_RenderFillRect(gameManager.gRenderer, &fillRect);
 		// Top side rectangle
 		fillRect = {pixelPoint.x, pixelPoint.y, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH};
-		SDL_RenderFillRect(gRenderer, &fillRect);
+		SDL_RenderFillRect(gameManager.gRenderer, &fillRect);
 		// Bottom side rectangle
 		fillRect = {pixelPoint.x, pixelPoint.y + mTex->getHeight() - HIGHLIGHT_BORDER_WIDTH, mTex->getWidth(), HIGHLIGHT_BORDER_WIDTH};
-		SDL_RenderFillRect(gRenderer, &fillRect);
+		SDL_RenderFillRect(gameManager.gRenderer, &fillRect);
 	}
 }

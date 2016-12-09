@@ -1,6 +1,6 @@
 #include "constants.h"
 #include "geral.h"
-
+#include "gamemanager.h"
 /*************************************************************************************
  *************************************************************************************
  * "generateWorld" is the function called to populate the matrix with a configuration of blocks at the initialization.
@@ -20,7 +20,7 @@ void generateWorldfgfg()
 {
 	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gBlueSquare, MatrixPoint(0, j));
+		gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(0, j));
 	}
 }
 
@@ -29,9 +29,9 @@ void generateWorldfgfg()
  */
 void generateWorldadas()
 {
-	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
-	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
+	gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
 }
 
 /**
@@ -40,10 +40,10 @@ void generateWorldadas()
 
 void generateWorldasf()
 {
-	addBlock(&gBlueSquare, MatrixPoint(0, 0));
+	gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(0, 0));
 	for (int j = 1; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gGreenSquare, MatrixPoint(0, j));
+		gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, j));
 	}
 }
 
@@ -58,11 +58,11 @@ void generateWorldasd()
 {
 	for (int i = 0; i < MATRIX_HEIGHT; i++)
 	{
-		addBlock(&gBlueSquare, MatrixPoint(i, 0));
+		gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(i, 0));
 	}
 	for (int j = 1; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gGreenSquare, MatrixPoint(0, j));
+		gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, j));
 	}
 }
 
@@ -80,12 +80,12 @@ void generateWorldfghfgh()
 		{
 			if (j == MATRIX_WIDTH - 3 && i == 0)
 				i = 1;
-			addBlock(&gBlueSquare, MatrixPoint(i, j));
+			gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(i, j));
 		}
 	}
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
 }
 
 /*
@@ -100,10 +100,10 @@ void generateWorldccc()
 {
 	for (int i = 0; i < MATRIX_HEIGHT - 1; i++)
 	{
-		addBlock(&gGreenSquare, MatrixPoint(i, MATRIX_WIDTH - 1));
+		gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(i, MATRIX_WIDTH - 1));
 	}
 
-	addBlock(&gGreySquare, MatrixPoint(MATRIX_HEIGHT - 1, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreySquare, MatrixPoint(MATRIX_HEIGHT - 1, MATRIX_WIDTH - 1));
 }
 
 /**
@@ -115,12 +115,12 @@ void generateWorldccc()
 
 void generateWorldasdfsd()
 {
-	addBlock(&gGreySquare, MatrixPoint(0, MATRIX_WIDTH - 1));
-	addBlock(&gGreySquare, MatrixPoint(1, MATRIX_WIDTH - 1));
-	addBlock(&gGreySquare, MatrixPoint(0, MATRIX_WIDTH - 2));
-	addBlock(&gGreySquare, MatrixPoint(1, MATRIX_WIDTH - 2));
-	addBlock(&gGreenSquare, MatrixPoint(2, MATRIX_WIDTH - 1));
-	addBlock(&gGreenSquare, MatrixPoint(2, MATRIX_WIDTH - 2));
+	gameManager.addBlock(&gameManager.textureManager.gGreySquare, MatrixPoint(0, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreySquare, MatrixPoint(1, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreySquare, MatrixPoint(0, MATRIX_WIDTH - 2));
+	gameManager.addBlock(&gameManager.textureManager.gGreySquare, MatrixPoint(1, MATRIX_WIDTH - 2));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(2, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(2, MATRIX_WIDTH - 2));
 }
 
 /*
@@ -131,18 +131,18 @@ void generateWorldasdfsd()
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  * XXXXXXXXXXXXXXXXXXXXXXXXXXX
  */
-void generateWorldfhfhf()
+void generateWorld()
 {
 	for (int i = 0; i < MATRIX_HEIGHT - 1; i++)
 	{
 		for (int j = 0; j < MATRIX_WIDTH; j++)
 		{
-			addBlock(&gRedSquare, MatrixPoint(i, j));
+			gameManager.addBlock(&gameManager.textureManager.gRedSquare, MatrixPoint(i, j));
 		}
 	}
 	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gGreenSquare, MatrixPoint(MATRIX_HEIGHT - 1, j));
+		gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(MATRIX_HEIGHT - 1, j));
 	}
 }
 
@@ -154,11 +154,11 @@ void generateWorldada()
 {
 	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gRedSquare, MatrixPoint(0, j));
+		gameManager.addBlock(&gameManager.textureManager.gRedSquare, MatrixPoint(0, j));
 	}
 	for (int j = 0; j < MATRIX_WIDTH; j++)
 	{
-		addBlock(&gGreenSquare, MatrixPoint(1, j));
+		gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(1, j));
 	}
 }
 
@@ -172,11 +172,11 @@ void generateWorldada()
  */
 void generateWorldasdasd()
 {
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
-	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 1));
 	for (int i = 2; i < MATRIX_HEIGHT; i++)
 	{
-		addBlock(&gRedSquare, MatrixPoint(i, MATRIX_WIDTH - 1));
+		gameManager.addBlock(&gameManager.textureManager.gRedSquare, MatrixPoint(i, MATRIX_WIDTH - 1));
 	}
 }
 
@@ -188,21 +188,21 @@ void generateWorldasdasd()
  */
 void generateWorld6696()
 {
-	addBlock(&gYellowSquare, MatrixPoint(2, MATRIX_WIDTH - 3));
-	addBlock(&gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
-	addBlock(&gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 3));
-	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
-	addBlock(&gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
+	gameManager.addBlock(&gameManager.textureManager.gYellowSquare, MatrixPoint(2, MATRIX_WIDTH - 3));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(0, MATRIX_WIDTH - 3));
+	gameManager.addBlock(&gameManager.textureManager.gGreenSquare, MatrixPoint(1, MATRIX_WIDTH - 3));
+	gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 2));
+	gameManager.addBlock(&gameManager.textureManager.gBlueSquare, MatrixPoint(0, MATRIX_WIDTH - 1));
 }
 
 // Generate a random rectangle of blocks starting at the game first column
-void generateWorld()
+void generateWorldasdfasdf()
 {
 	for (int j = GAME_FIRST_COLUMN; j < MATRIX_WIDTH; j++)
 	{
 		for (int i = 0; i < MATRIX_HEIGHT; i++)
 		{
-			addBlock(randomTexture(), MatrixPoint(i, j));
+			gameManager.addBlock(gameManager.textureManager.randomTexture(), MatrixPoint(i, j));
 		}
 	}
 }

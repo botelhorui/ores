@@ -3,6 +3,7 @@
 
 #include "texture.h"
 #include "geral.h"
+#include "points.h"
 
 
 //#include "common.h"

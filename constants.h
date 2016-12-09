@@ -30,7 +30,7 @@ const int TEXTURE_SIDE = 32;
 // Ammount of seconds between right column insertion
 const int START_TIMER_CLICKS = 10000;
 
-const double TIMER_DIFFICULTY_MULTIPLYER = 0.9;
+const double TIMER_DIFFICULTY_MULTIPLYER = 0.95;
 
 // Geometric properties of the timer
 const int TIMER_POS_X = 40;
